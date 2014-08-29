@@ -1,0 +1,40 @@
+default pandemia
+prompt 1
+timeout 600
+display msgs/boot.msg
+F1 msgs/boot.msg
+F2 msgs/options.msg
+F3 msgs/general.msg
+F4 msgs/param.msg
+F5 msgs/rescue.msg
+
+label pandemia
+  kernel CentOS5.x/vmlinuz
+  append initrd=CentOS5.x/initrd.img ramdisk_size=8419 ks=http://10.13.0.93/pandemia/centos.cfg ksdevice=eth0 vnc vncconnect=10.13.0.93 noipv6
+label pandemia1
+  kernel CentOS5.x/vmlinuz
+  append initrd=CentOS5.x/initrd.img ramdisk_size=8419 ks=http://10.13.0.93/pandemia/centos.cfg ksdevice=eth0 vnc vncconnect=10.13.0.93:5501 noipv6
+label pandemia2
+  kernel CentOS5.x/vmlinuz
+  append initrd=CentOS5.x/initrd.img ramdisk_size=8419 ks=http://10.13.0.93/pandemia/centos.cfg ksdevice=eth0 vnc vncconnect=10.13.0.93:5502 noipv6
+label locale
+  kernel CentOS5.x/vmlinuz
+  append initrd=CentOS5.x/initrd.img ramdisk_size=8419 ks=http://10.13.0.93/pandemia/centos.cfg ksdevice=eth0 noipv6 vnc
+label novnc
+  kernel CentOS5.x/vmlinuz
+  append initrd=CentOS5.x/initrd.img ramdisk_size=8419 ks=http://10.13.0.93/pandemia/centosnovnc.cfg ksdevice=eth0 noipv6
+label cripto
+  kernel CentOS5.x/vmlinuz
+  append initrd=CentOS5.x/initrd.img ramdisk_size=8419 ks=http://10.13.0.93/pandemia/centoscripto.cfg ksdevice=eth0 noipv6
+label text
+  kernel CentOS5.x/vmlinuz
+  append initrd=CentOS5.x/initrd.img text 
+label ks
+  kernel CentOS5.x/vmlinuz
+  append ks initrd=CentOS5.x/initrd.img
+label local
+  localboot 1
+label memtest86
+  kernel CentOS5.x/memtest
+  append -
+

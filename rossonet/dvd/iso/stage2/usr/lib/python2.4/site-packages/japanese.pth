@@ -1,0 +1,3 @@
+# Tamito KAJIYAMA <2 April 2002>
+# $Id: japanese.pth,v 1.1 2002/06/04 09:39:26 kajiyama Exp $
+import japanese

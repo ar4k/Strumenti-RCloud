@@ -1,0 +1,622 @@
+#!/bin/bash
+#.
+#. Realizzato da Rossonet s.c.a r.l.
+#. Rilasciato con licenza GNU Affero General Public License
+#. la licenza AGPL è disponibile qui: http://www.gnu.org/licenses/agpl-3.0.html
+#.
+#. Per informazioni ed eventuali contratti di supporto:
+#. http://www.rossonet.com
+#. andrea.ambrosini@rossonet.com
+#
+#. Rossonet s.c.a r.l. distributes this code under GNU Affero General Public License ( AGPLv3 )
+#. All right not expressly granted are reserved.
+#
+#. Autore: Andrea Ambrosini
+#. Contributi:	Davide Prato ( davide.prato@rossonet.com )
+#.		Laura Baldassarri ( laura.baldassarri@rossonet.com )
+#.		Gianni Ghedini ( gianni.ghedini@acantho.com )
+#.		Marco Nalon ( marco.nalon@rossonet.com )
+#.
+# Descrizione Prodotto:
+#
+#.
+#. Questo script crea un DVD autoinstallante che:
+#. - installa su un server un sistema CentOS 5.x 
+#.   con sistema di virtualizzazione XEN.
+#. - attiva l'immagine compressa di questa macchina sul server appena installato
+#.   come nodo virtuale.
+#. - non necessita di collegamento a internet
+#.
+#. by Ambrosini - Rossonet s.c.a r.l.
+#.
+#. Carica sempre /etc/rossonet/ec2Account se presente
+if [ -f /etc/rossonet/ec2Account ]
+then
+ source /etc/rossonet/ec2Account
+else
+ echo "/etc/rossonet/ec2Account Non esiste..."
+fi
+#.
+#. Carica sempre /etc/rossonet/context.sh se presente
+if [ -f /etc/rossonet/context.sh ]
+then
+ source /etc/rossonet/context.sh
+ echo "-------------------------------------"
+ echo "DESCRIZIONE DEL CONTESTO OPERATIVO:"
+ echo -e $ConfDescrizione
+ echo "-------------------------------------"
+ echo
+else
+ echo "/etc/rossonet/context.sh Non esiste..."
+fi
+#.
+
+
+# Variabili
+dir_appoggio=/mnt/dvd/appoggio
+dir_confeziona=/opt/rossonet/dvd
+dir_kickstart=$dir_appoggio/iso/kickstart_build
+
+# Gestione parametri per automatizzazioni successive.
+parametro1=$1
+
+while [ "$comando" == ""  ]
+do
+
+comando=$parametro1
+
+if [ "$comando" == ""  ]
+then
+	echo -n "Inserisci il comando [completo|sincrorepo|sincrodvd|nebulizza|masterizza]( help per la guida o uscita ): "
+        read comando
+fi
+
+if [ "$comando" == "help" ]
+then
+comando=""
+grep "#\." /opt/rossonet/$( basename $0 ) | sed "s/^#\.//"
+exit 0
+fi
+#. -------------------------------------
+#. Usare il comando uscita per terminare
+#. ------------------------------------
+#.
+if [ "$comando" == "uscita" ]
+then
+comando=""
+exit 0
+fi
+# Assegna un nome macchina da configurazione
+#. Utilizza per il nome del file i parametri configurati in /etc/rossonet/context.sh ( RpostNAME e RpreNAME_date )
+#.  
+Particella="DVD-AUTO-"$(cat /etc/rossonet/tipo)
+if [ -z "$RpreNAME_date" ]
+then
+ echo "RpostNAME_date non popolata"
+else
+ preName=$(date $RpreNAME_date)'-'
+fi
+if [ -z "$RpostNAME" ]
+then
+ echo "RpostNAME non popolata"
+else
+ postName="-$RpostNAME"
+fi
+nomemacchina="$preName$Particella$postName"
+echo "Nome utilizzato: $nomemacchina"
+done
+#. Essendo l'operazione abbastanza lunga le varie fasi possono essere gestite con un parametro,
+#. l'elenco delle funzioni possibile:
+
+#. - completo - esegue tutte le operazioni ( clona la macchina ! )
+if [ "$comando" == "completo"  ]
+then
+ opnebulizza="si"
+ centsincro="si"
+ eucarepo="si"
+ mischia="si"
+ creamaster="si"
+ creapacchetti="si"
+ copiaop="si"
+ masterizza="si"
+fi
+
+#. - sincrorepo - sincronizza i repository dei pacchetti rpm necessari da internet a /mnt/dvd/appoggio
+if [ "$comando" == "sincrorepo"  ]
+then
+ opnebulizza="no"
+ centsincro="si"
+ eucarepo="si"
+ mischia="si"
+ creamaster="no"
+ creapacchetti="no"
+ copiaop="no"
+ masterizza="no"
+fi
+
+#. - sincrodvd - copia dai repository in /mnt/dvd/appoggio i pacchetti necessari al dvd
+if [ "$comando" == "sincrodvd"  ]
+then
+ opnebulizza="no"
+ centsincro="no"
+ eucarepo="no"
+ mischia="no"
+ creamaster="si"
+ creapacchetti="si"
+ copiaop="no"
+ masterizza="no"
+fi
+
+#. - nebulizza - crea/aggiorna il DVD autoinstallante con la copia di OP clonata dalla macchina attuale ( clona la macchina ! )
+if [ "$comando" == "nebulizza"  ]
+then
+ opnebulizza="si"
+ centsincro="no"
+ eucarepo="no"
+ mischia="no"
+ creamaster="si"
+ creapacchetti="no"
+ copiaop="si"
+ masterizza="si"
+fi
+
+#. - masterizza - masterizza il DVD autoinstallante
+if [ "$comando" == "masterizza"  ]
+then
+ opnebulizza="no"
+ centsincro="no"
+ eucarepo="no"
+ mischia="no"
+ creamaster="si"
+ creapacchetti="no"
+ copiaop="si"
+ masterizza="si"
+fi
+#.
+
+# Nebulizza OP
+#. Durante la copia i servizi elencati in /etc/rossonet/serviziDaGestire.txt vengono sospesi.
+#.
+mkdir -p /mnt/xen
+if [ "$opnebulizza" == "si"  ]
+then
+ echo "Inizio creazione immagine, ci vorra' mezz'ora e piu'..."
+ $dir_confeziona/nebulizza.sh op
+ echo "-----------------"
+fi
+
+# Carica i pacchetti per Centos
+#. Repository utilizzati:
+if [ "$centsincro" == "si"  ]
+then
+ echo "Inizio Sincronizzazione da repository CentOS..."
+ mkdir -p $dir_appoggio/centos
+#. mi.mirror.garr.it::CentOS/5.8/os/x86_64
+ rsync  -avSHP --delete --exclude "local*" mi.mirror.garr.it::CentOS/5.8/os/x86_64 $dir_appoggio/centos
+ #cp -a $dir_appoggio/centos/* centos/
+ if [ "$eucarepo" == "si" ]
+ then
+  echo "Sincronizza da repository Eucalyptus..."
+# Rimuove la copia locale se esiste
+  if [ -e $dir_appoggio/euca ]
+  then
+   rm -rf $dir_appoggio/euca
+  fi
+# crea la copia locale del repo euca
+#. http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/
+  mkdir -p $dir_appoggio/euca
+  cd $dir_appoggio/euca
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/aoetools-21-1.el4.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/euca-axis2c-1.6.0-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/euca-rampartc-1.3.0-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/euca2ools-1.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-1.6.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-1.6.2-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-cc-1.6.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-cc-1.6.2-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-cloud-1.6.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-cloud-1.6.2-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-common-java-1.6.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-common-java-1.6.2-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-gl-1.6.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-gl-1.6.2-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-nc-1.6.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-nc-1.6.2-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-sc-1.6.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-sc-1.6.2-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-walrus-1.6.2-0.1.rc1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/eucalyptus-walrus-1.6.2-1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/groovy-1.6.5-1.noarch.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/lzo2-2.02-3.el5.rf.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/python25-2.5.1-bashton1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/python25-libs-2.5.1-bashton1.x86_64.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/vblade-14-1mdv2008.1.i586.rpm  
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/vtun-3.0.2-1.el5.rf.x86_64.rpm  
+ fi
+ echo "Sincronizza da repository Webmin..."
+ mkdir -p $dir_appoggio/webmin
+ cd $dir_appoggio/webmin
+# http://download.webmin.com/download/yum/webmin-1.580-1.noarch.rpm
+# wget http://download.webmin.com/download/yum/webmin-1.580-1.noarch.rpm
+ wget http://cloudmin.virtualmin.com/gpl/universal/wbm-security-updates-4.1-1.noarch.rpm
+ wget http://cloudmin.virtualmin.com/gpl/universal/wbm-server-manager-6.4.gpl-1.noarch.rpm
+ wget http://cloudmin.virtualmin.com/gpl/universal/wbm-virtualmin-password-recovery-1.4-1.noarch.rpm
+ wget http://cloudmin.virtualmin.com/gpl/universal/wbt-virtual-server-theme-8.3-1.noarch.rpm
+ wget http://cloudmin.virtualmin.com/gpl/universal/webmin-1.590-1.noarch.rpm
+ echo "Sincronizza da repository Epel..."
+ mkdir -p $dir_appoggio/fedora-epel
+ cd $dir_appoggio
+#. rsync://linux.mirrors.es.net/fedora-epel/5Server/x86_64
+# rsync -avH --exclude "debug" rsync://linux.mirrors.es.net/fedora-epel/5Server/x86_64 fedora-epel/
+ rsync -avH --exclude "debug" rsync://mirror.bytemark.co.uk/fedora/epel/5Server/x86_64 fedora-epel/
+ echo "Sincronizza da repository updates..."
+ mkdir -p $dir_appoggio/updates
+ cd $dir_appoggio
+#. mi.mirror.garr.it::CentOS/5.8/updates/x86_64
+#.
+ rsync  -avSHP --delete --exclude "local*" mi.mirror.garr.it::CentOS/5.8/updates/x86_64 updates/
+ if [ "$mischia" == "si"  ]
+ then
+  echo "Crea il repository unico mix con dentro tutti gli RPM..."
+# Rimuove la copia locale se esiste
+  if [ -e $dir_appoggio/mix ]
+  then
+   rm -rf $dir_appoggio/mix
+  fi
+  mkdir -p $dir_appoggio/mix
+# Copia da Euca
+  echo -n "Eucalyptus "
+  ln $dir_appoggio/euca/*.rpm $dir_appoggio/mix/
+# Copia da CentOS ( per copiare un numero di file elevato uso il seguente ciclo for )
+  echo -n "CentOS "
+  for file in $( find $dir_appoggio/centos/x86_64/CentOS -name *.rpm )
+  do
+   ln $file $dir_appoggio/mix/
+  done
+# Copia da Webmin
+  echo -n "Webmin "
+  ln $dir_appoggio/webmin/*.rpm $dir_appoggio/mix/
+# Copia da Epel ( per copiare un numero di file elevato uso il seguente ciclo for )
+  echo -n "Epel "
+  for filee in $( find $dir_appoggio/fedora-epel/x86_64/ -name *.rpm )
+  do
+   ln $filee $dir_appoggio/mix/
+  done
+# Copia da update
+  echo -n "Updates "
+  ln $dir_appoggio/updates/x86_64/RPMS/*.rpm $dir_appoggio/mix/
+ fi
+ echo
+ echo "-----------------"
+fi
+
+# Crea DVD Master
+if [ "$creamaster" == "si"  ]
+then
+ echo "Crea la struttura per il dvd..."
+
+ mkdir -p $dir_kickstart
+ mkdir -p $dir_kickstart/isolinux/images
+ mkdir -p $dir_kickstart/isolinux/ks
+# Copia i file iniziali
+ cp $dir_appoggio/centos/x86_64/isolinux/* $dir_kickstart/isolinux/
+ cp $dir_appoggio/centos/x86_64/.discinfo $dir_kickstart/isolinux/
+ cp -a $dir_appoggio/centos/x86_64/images/* $dir_kickstart/isolinux/images/
+ cp $dir_appoggio/centos/x86_64/repodata/comps.xml $dir_kickstart/
+ cp $dir_confeziona/iso/centos-master.cfg $dir_kickstart/isolinux/ks/ks.cfg
+ grep -v 'rimuoviOP66' $dir_confeziona/iso/centos-master.cfg > $dir_confeziona/iso/centos-nodo.cfg
+ cp $dir_confeziona/iso/centos-nodo.cfg $dir_kickstart/isolinux/ks/nodo.cfg
+# I due file di configurazione KS differiscono solo per il comando "vnc"
+ grep -v '^vnc$' $dir_confeziona/iso/centos-master.cfg > $dir_kickstart/isolinux/ks/novnc.cfg
+ grep -v '^vnc$' $dir_confeziona/iso/centos-master.cfg | sed 's/^part \/.*--size=1$/part \/ --asprimary --fstype="ext3" --grow --size=1 --encrypted/' > $dir_kickstart/isolinux/ks/cripto.cfg
+ grep -v '^vnc$' $dir_confeziona/iso/centos-nodo.cfg > $dir_kickstart/isolinux/ks/nodonovnc.cfg
+ grep -v '^vnc$' $dir_confeziona/iso/centos-nodo.cfg | sed 's/^part \/.*--size=1$/part \/ --asprimary --fstype="ext3" --grow --size=1 --encrypted/' > $dir_kickstart/isolinux/ks/nodocripto.cfg
+ cp $dir_confeziona/iso/isolinux-master.cfg $dir_kickstart/isolinux/isolinux.cfg
+ cp $dir_confeziona/iso/boot-master.msg $dir_kickstart/isolinux/boot.msg
+ sed  --in-place "s/<op>/CentOS 6.x RCloud/g" $dir_kickstart/isolinux/boot.msg
+# Ricostruisce stage2.img UTILE PER CAMBIARE LA GRAFICA DELL'INSTALLER ANACONDA
+#. Per compatibilità con CentOS 5.x viene utilizzata la vecchia versione di mksquashfs
+#. ( /opt/rossonet/dvd/mksquashfs )
+#.
+/opt/rossonet/dvd/mksquashfs $dir_confeziona/iso/stage2/ $dir_kickstart/isolinux/images/stage2.img -noappend
+# Carica i pacchetti dall'inizio
+ if [ "$creapacchetti" == "si"  ]
+ then
+# Elimina la directory se esiste
+  if [ -e $dir_kickstart/isolinux/CentOS ]
+  then
+   rm -rf $dir_kickstart/isolinux/CentOS
+  fi
+  echo "Copia gli RPM necessari..."
+  mkdir -p $dir_kickstart/isolinux/CentOS
+  cd $dir_kickstart/isolinux/CentOS
+# parse_comps.pl legge i gruppi configurati in se stesso da comps.xml QUANDO SI AGGIUNGO GRUPPI AL KS BISOGNA AGIRE ANCHE SU parse_comps.pl
+  $dir_confeziona/iso/parse_comps.pl $dir_kickstart/comps.xml $dir_appoggio/mix x86_64
+# Quando si aggiungono dei pacchetti singoli nel KS bisogna copiare i file qui
+  echo "Copia gli rpm aggiuntivi e personalizzati..."
+  arch=x86_64
+  cp $dir_appoggio/mix/ntp-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/java-1.6.0-openjdk-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ant-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ant-nodeps-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/dhcp-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/tftp-server-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/bridge-utils-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/httpd-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xen-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/euca2ools-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/lynx-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/nmap-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/tcpdump-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/strace-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/openvpn-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/mysql-server-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ruby-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/virt-manager-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/wget-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/unzip-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ebtables-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libtermcap-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/perl-Net-SSLeay-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/vixie-cron-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/bind-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/bind-utils-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xen-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/lsof-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXdmcp-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/nash-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/mktemp-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ncurses-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/dnsmasq-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnutls-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/PyXML-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/php-common-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/trousers-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/iscsi-initiator-utils-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/portmap-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/alchemist-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libsysfs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/audit-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/java-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXt-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXfont-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/giflib-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/chkfontpath-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/tk-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libbonoboui-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnome-keyring-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python-numeric-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/at-spi-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXaw-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-xauth-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXres-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libnotify-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libgfortran-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/perl-DBD-MySQL-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/pcsc-lite-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xml-commons-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/e4fsprogs-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/samba-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnome-mount-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ifd-egate-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gtk-vnc-python-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/opensp-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/scrollkeeper-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/pulseaudio-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-system-cris-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-system-ppc-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libffi-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python26-m2crypto-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python-elementtree-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/audit-libs-python-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/NetworkManager-glib-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libpcap-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/wpa_supplicant-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/perl-String-CRC32-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/procmail-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/foomatic-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/mcstrans-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/unixODBC-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/php-cli-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/keyutils-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/audiofile-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/SDL-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/cyrus-sasl-md5-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libvirt-python-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libevent-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/nfs-utils-lib-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/postgresql-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libxslt-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libxslt-python-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gd-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/postgresql84-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/patch-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/yp-tools-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gjdoc-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/tcl-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libfontenc-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/Xaw3d-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ttmkfdir-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libFS-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-font-utils-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-xfs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/emacs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/tclx-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libgnome-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/pyorbit-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnome-python2-gnomevfs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libgnomeui-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/net-snmp-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnome-python2-gconf-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXevie-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/pyspi-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-server-Xvfb-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXTrap-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXxf86vm-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXfontcache-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-xinit-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/startup-notification-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/notification-daemon-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/bluez-gnome-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/syslinux-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libstdc++-devel-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/mysql-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gamin-python-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/imake-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/pcsc-lite-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/java-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xml-commons-apis-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xerces-j2-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libsmbclient-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/samba-common-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/rmt-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnome-mime-data-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/tzdata-java-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/oddjob-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnome-python2-desktop-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gtk-vnc-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libcroco-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/librsvg2-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/device-mapper-multipath-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-user-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-system-x86-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-system-arm-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-system-sh4-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-system-mips-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/perl-Authen-PAM-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python26-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python-sqlite-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/rhpl-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ppp-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/hesiod-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/system-config-printer-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/nscd-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/neon-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/esound-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libvirt-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libgssapi-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/perl-DBI-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXpm-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/mx-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libgcj-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/antlr-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXmu-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/emacs-common-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libbonobo-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnome-python2-bonobo-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/OpenIPMI-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gail-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libXxf86misc-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-server-utils-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libwnck-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/bluez-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libvolume_id-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/newt-perl-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xml-commons-resolver-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/perl-BSD-Resource-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/gnome-python2-gnomekeyring-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/libgsf-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/openjade-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/vte-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-common-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-system-sparc-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/qemu-system-m68k-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python26-libs-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/openssl-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  arch=noarch
+  cp $dir_appoggio/mix/yum-utils-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/htmlview-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python-virtinst-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/epel-release-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/redhat-menus-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/jpackage-utils-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xml-common-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/docbook-dtds-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/bitmap-fonts-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/python26-boto-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/euca2ools-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-filesystem-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-fonts-ISO8859-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/xorg-x11-fonts-base-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/yum-fastestmirror-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/perl-Convert-ASN1-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/bitstream-vera-fonts-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/perl-JSON-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/webmin-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/wbt-virtual-server-theme-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/wbm-virtualmin-password-recovery-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/wbm-server-manager-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/wbm-security-updates-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
+# Aggiunge il kernel
+  cp $dir_appoggio/mix/kernel-*.rpm $dir_kickstart/isolinux/CentOS/
+# Da debug: Aggiunge pkcs11-helper-* e ruby-libs-*
+  cp $dir_appoggio/mix/pkcs11-helper-*.rpm $dir_kickstart/isolinux/CentOS/
+  cp $dir_appoggio/mix/ruby-libs-*.rpm $dir_kickstart/isolinux/CentOS/
+
+  echo "Sistema le dipendenze..."
+  cd $dir_kickstart/isolinux/CentOS
+# Per ogni pacchetto copiato prima, follow_deps.pl copia anche le dipendenze e le dipendenze delle dipendenze
+  $dir_confeziona/iso/follow_deps.pl $dir_appoggio/mix x86_64
+ fi
+
+ if [ "$copiaop" == "si"  ]
+ then
+  echo "Copio OP nebulizzato nella directory postinstall..."
+  mkdir -p $dir_kickstart/isolinux/postinstall/op
+  ln /mnt/xen/op/* $dir_kickstart/isolinux/postinstall/op/
+ fi
+ echo "Copio VPN, tftpboot e kernel xen e splash Maos"
+ cp -a $dir_confeziona/iso/nodo $dir_kickstart/isolinux/postinstall/
+ cp -a $dir_confeziona/iso/tftpboot $dir_kickstart/isolinux/postinstall/
+ cp $dir_confeziona/iso/maos.xpm.gz $dir_kickstart/isolinux/postinstall/splash.xpm.gz 
+# Compressione di alcuni pacchetti
+ cd $dir_kickstart/isolinux/postinstall
+ zip -r nodo nodo
+ zip -r tftpboot tftpboot 
+# Elimina i compressi
+ rm -rf nodo tftpboot
+# Copia il kernel usato dal virtualizzatore 
+# cp $dir_confeziona/templateXEN/vmlinuz-2.6.32-279.5.2.el6.i686 $dir_kickstart/isolinux/postinstall/
+# cp $dir_confeziona/templateXEN/vmlinuz-3.5.4-2.el6xen.i686 $dir_kickstart/isolinux/postinstall/
+# cp $dir_confeziona/templateXEN/initramfs-2.6.32-279.5.2.el6.i686.img $dir_kickstart/isolinux/postinstall/
+# cp $dir_confeziona/templateXEN/initramfs-3.5.4-2.el6xen.i686.img $dir_kickstart/isolinux/postinstall/
+
+ if [ "$masterizza" == "si"  ]
+ then
+  echo "Masterizza il DVD..."
+  echo "Crea il Repository dai file rpms"
+  cd $dir_kickstart/isolinux
+  declare -x discinfo=`head -1 .discinfo`
+  createrepo -s sha1 -u "media://$discinfo" -g ../comps.xml .
+  echo "Crea l'iso..."
+  cd $dir_kickstart
+  mkisofs -o nodo1.iso -b isolinux.bin -c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -R -J -v -T isolinux/
+# Copia l'iso per il nodo normale generata all'avvio da creaPandemia
+  mv nodo1.iso /mnt/dvd/xen-master.iso
+# Trova l'ip per il messaggio
+  url_string='http://www.rossonet.com/myip.php';
+  echo "Cerca ip esterno..."
+  WAN=$( curl $url_string 2> /dev/null | grep 'Current IP Address' | sed 's/^Current IP Address: //' | sed 's/<\/body>//' )
+  if [ "$WAN" == "" ]; then WAN='<server>'; fi
+  # Mi posiziono
+  cd /mnt/dvd/
+#. Se RsaveDVD è presente in /etc/rossonet/context.sh verrà usata come path di salvataggio
+#. 
+  if [ -z "$RsaveDVD" ]
+  then
+   mkdir -p /mnt/pubblico
+   mv /mnt/dvd/xen-master.iso /mnt/pubblico/$nomemacchina.iso
+   echo "Operazione terminata! il dvd è in /mnt/pubblico/$nomemacchina.iso , raggiungibile via web a http://$WAN/pub/$nomemacchina.iso"
+  else
+   mkdir -p $RsaveDVD
+   cp /mnt/dvd/xen-master.iso $RsaveDVD/$nomemacchina.iso
+  fi
+  echo
+ fi
+fi
+
+# Fine
+exit 0
+

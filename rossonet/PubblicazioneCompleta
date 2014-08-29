@@ -1,0 +1,20 @@
+#!/bin/bash
+echo "Pulisce la cache yum"
+yum clean all
+echo "Testa tutti i comandi. Ci vuole molto tempo"
+mkdir -p /mnt/cassettone/log
+echo creaAMI...
+creaAMI $(cat /etc/rossonet/tipo) >& /mnt/cassettone/log/$(cat /etc/rossonet/tipo)-creaAMI.log
+echo creaXEN...
+creaXEN $(cat /etc/rossonet/tipo) >& /mnt/cassettone/log/$(cat /etc/rossonet/tipo)-creaXEN.log
+echo creaEBSAMI...
+creaEBSAMI $(cat /etc/rossonet/tipo) >& /mnt/cassettone/log/$(cat /etc/rossonet/tipo)-creaEBSAMI.log
+#echo creaDVD
+#creaDVD completo >& /mnt/cassettone/log/$(cat /etc/rossonet/tipo)-creaDVD.log
+echo creaOVA...
+creaOVA $(cat /etc/rossonet/tipo) >& /mnt/cassettone/log/$(cat /etc/rossonet/tipo)-creaOVA.log
+echo creaLIVE...
+creaLIVE $(cat /etc/rossonet/tipo) >& /mnt/cassettone/log/$(cat /etc/rossonet/tipo)-creaLIVE.log
+echo "Operazione terminata"
+exit 0
+

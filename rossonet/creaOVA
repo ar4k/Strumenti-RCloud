@@ -1,0 +1,300 @@
+#!/bin/bash
+#.
+#. Realizzato da Rossonet s.c.a r.l.
+#. Rilasciato con licenza GNU Affero General Public License
+#. la licenza AGPL è disponibile qui: http://www.gnu.org/licenses/agpl-3.0.html
+#.
+#. Per informazioni ed eventuali contratti di supporto:
+#. http://www.rossonet.com
+#. andrea.ambrosini@rossonet.com
+#
+#. Rossonet s.c.a r.l. distributes this code under GNU Affero General Public License ( AGPLv3 )
+#. All right not expressly granted are reserved.
+#
+#. Autore: Andrea Ambrosini
+#. Contributi:	Davide Prato ( davide.prato@rossonet.com )
+#.		Laura Baldassarri ( laura.baldassarri@rossonet.com )
+#.		Gianni Ghedini ( gianni.ghedini@acantho.com )
+#.		Marco Nalon ( marco.nalon@rossonet.com )
+#.
+# Descrizione Prodotto:
+#
+#.
+#. Questo script converte una macchina in una applicazione virtuale 
+#. istanziabile con VMware,VirtualBox e KVM.
+#. Il formato di uscita è un file OVA
+#. Per maggiori dettagli: http://it.wikipedia.org/wiki/Open_Virtualization_Format
+#.
+#. Con la macchina risultante, con filesystem permanente,
+#. si può erogare servizio ai clienti in produzione su cloud privati.
+#.
+#. by Ambrosini - Rossonet s.c.a r.l.
+#.
+#. Carica sempre /etc/rossonet/ec2Account se presente
+if [ -f /etc/rossonet/ec2Account ]
+then
+ source /etc/rossonet/ec2Account
+else
+ echo "/etc/rossonet/ec2Account Non esiste..."
+fi
+#.
+#. Carica sempre /etc/rossonet/context.sh se presente
+if [ -f /etc/rossonet/context.sh ]
+then
+ source /etc/rossonet/context.sh
+ echo "-------------------------------------"
+ echo "DESCRIZIONE DEL CONTESTO OPERATIVO:"
+ echo -e $ConfDescrizione
+ echo "-------------------------------------"
+ echo
+else
+ echo "/etc/rossonet/context.sh Non esiste..."
+fi
+#.
+
+# Carica le variabili per EC2
+
+# Input da Utente e guida
+cd /mnt
+parametro1=$1
+
+while [ "$nomemacchina" == ""  ]
+do
+
+nomemacchina=$parametro1
+
+if [ "$nomemacchina" == ""  ]
+then
+	echo -n "Inserisci il disco da creare ( help per la guida o uscita ): "
+        read nomemacchina
+fi
+
+if [ "$nomemacchina" == "help" ]
+then
+nomemacchina=""
+grep "#\." /opt/rossonet/$( basename $0 ) | sed "s/^#\.//"
+exit 0
+fi
+#. -------------------------------------
+#. Usare il comando uscita per terminare
+#. ------------------------------------
+if [ "$nomemacchina" == "uscita" ]
+then
+nomemacchina=""
+exit 0
+fi
+done
+
+#. Utilizza per il nome del file i parametri configurati in /etc/rossonet/context.sh ( RpostNAME e RpreNAME_date )
+#.  
+if [ -z "$RpreNAME_date" ]
+then
+ echo "RpostNAME_date non popolata"
+else
+ preName=$(date $RpreNAME_date)'-'
+fi
+if [ -z "$RpostNAME" ]
+then
+ echo "RpostNAME non popolata"
+else
+ postName="-$RpostNAME"
+fi
+nomemacchina="$preName$nomemacchina$postName"
+echo "Nome utilizzato: $nomemacchina"
+
+
+NOME=$nomemacchina
+IMAGE='/mnt/disco.bin'
+DISCO_MOUNT_POINT='/mnt/disco'
+grubtgz='/opt/rossonet/ova/grub.tgz'
+
+echo
+echo "Crea il disco su filesystem..."
+dd bs=1M count=12288 if=/dev/zero of=$IMAGE
+echo
+echo "Crea il mount point..."
+mkdir -p $DISCO_MOUNT_POINT
+echo
+echo "Crea la device del disco..."
+discodev=$( losetup -vf $IMAGE | cut -d\  -f4 )
+echo "Il disco e' accessibile da $discodev"
+echo
+echo "Crea la tabella delle partizioni..."
+(
+sleep 1 ; echo x     # Va in modalita avanzata
+sleep 1 ; echo c      # Imposta i  cilindri
+sleep 1 ; echo 1566   # a 1566  
+sleep 1 ; echo r      # Torna in modalità normale
+sleep 1 ; echo n      # Crea partizione 1 boot
+sleep 1 ; echo p 
+sleep 1 ; echo 1  
+sleep 1 ; echo  
+sleep 1 ; echo "+250M"   # da 250 M
+sleep 1 ; echo n   # Crea la partizione swap
+sleep 1 ; echo p  
+sleep 1 ; echo 2  
+sleep 1 ;  echo  
+sleep 1 ; echo "+2048M"  # da 2G
+sleep 1 ; echo n     # Crea partizione root
+sleep 1 ; echo p 
+sleep 1 ; echo 3 
+sleep 1 ; echo  
+sleep 1 ; echo       # Fino a fine disco
+sleep 1 ; echo t    # Cambia
+sleep 1 ; echo 2    # la due
+sleep 1 ; echo 82   # in swap
+sleep 1 ; echo a     # imposta boot
+sleep 1 ; echo 1    # sulla prima
+sleep 1 ; echo w
+ )  | fdisk $discodev
+echo
+
+#. Calcola le variabili di inizio e fine delle partizioni ( in blocchi moltiplicati x il numero di byte a blocco ) 
+inizioboot=$(( $( fdisk -l -u $discodev | grep p1 | cut -c 19-30 | sed 's/\ //g' ) * 512 )) 
+inizioswap=$(( $( fdisk -l -u $discodev | grep p2 | cut -c 19-30 | sed 's/\ //g' ) * 512 )) 
+inizioroot=$(( $( fdisk -l -u $discodev | grep p3 | cut -c 19-30 | sed 's/\ //g' ) * 512 )) 
+
+fineboot=$(( $( fdisk -l -u $discodev | grep p1 | cut -c 30-40 | sed 's/\ //g' ) * 512 )) 
+fineswap=$(( $( fdisk -l -u $discodev | grep p2 | cut -c 30-40 | sed 's/\ //g' ) * 512 )) 
+fineroot=$(( $( fdisk -l -u $discodev | grep p3 | cut -c 30-40 | sed 's/\ //g' ) * 512 )) 
+#.
+#. Per accedere alle partizioni si creano delle device
+#. che puntano all'inizio della partizioni.
+#. Per calcolare l'inizio della partizione si
+#. usa il comando fdisk -u -l <immagine.bin> e si
+#. moltiplica la lunghezza in byte dei settori,
+#. nel nostro caso 512 con il numero 
+#. di settori ( opzione -u di fdisk )
+#.
+rootdev=$( losetup -fv -o $inizioroot $IMAGE | cut -d\  -f4 )
+swapdev=$( losetup -fv -o $inizioswap $IMAGE | cut -d\  -f4 )
+bootdev=$( losetup -fv -o $inizioboot $IMAGE | cut -d\  -f4 )
+echo "La partizione /boot e' accessibile da $bootdev"
+echo "La partizione di swap e' accessibile da $swapdev"
+echo "La partizione / e accessibile da $rootdev"
+echo
+echo "Formatta i dischi e prepara la swap..." 
+mkfs.ext4 -b 4096 $rootdev $(( ( $fineroot - $inizioroot ) / 4096 ))
+mkfs.ext4 -b 4096 $bootdev $(( ( $fineboot - $inizioboot ) / 4096 ))
+mkswap $swapdev $(( ( $fineswap - $inizioswap ) / 4096  ))
+echo
+echo "Monta il disco di root..." 
+mount  $rootdev $DISCO_MOUNT_POINT
+echo
+echo "Monta il disco di boot..."
+mkdir $DISCO_MOUNT_POINT/boot
+mount $bootdev $DISCO_MOUNT_POINT/boot
+echo
+echo "Copia l'immagine sul disco..."
+#make a local working copy
+#rm -rf /mnt/tmp
+#mkdir /mnt/tmp
+echo "Inizio la copia. Attendere..."
+echo
+
+#.
+#. Spegne i servizi critici ( configurati in /etc/rossonet/serviziDaGestire.txt )
+/opt/rossonet/spegniServizi.sh
+#.
+rsync -av --exclude=/etc/rossonet/*.rsyncremove --exclude=/root/.bash_history --exclude=/etc/rossonet/context.sh --exclude=/etc/rossonet/ec2Account --exclude=/etc/rossonet/ec2-cert.pem --exclude=/etc/rossonet/ec2-pk.pem --exclude=/home/*/.bash_history --exclude=/etc/ssh/ssh_host_* --exclude=/etc/ssh/moduli --exclude=/etc/udev/rules.d/*persistent-net.rules --exclude=/var/lib/ec2/* --exclude=/mnt/* --exclude=/proc/* --exclude=/tmp/* --exclude=/store/* --exclude=/sys/* / $DISCO_MOUNT_POINT >/dev/null
+#.
+/opt/rossonet/accendeServizi.sh
+#clear out log files
+cd $DISCO_MOUNT_POINT/var/log
+for i in `ls ./**/*`; do
+  echo $i && echo -n> $i
+done
+#.
+#. Crea un file /etc/fstab specifico:
+#. /dev/sda3  /         ext4    defaults        1 1
+#. /dev/sda1  /boot     ext4    defaults        1 2
+#. /dev/sda2  swap      swap    defaults        0 0
+#. /dev/sdb   /mnt      ext4    defaults        0 0
+#.
+echo
+echo "Sistemo /etc/fstab..."
+
+cat << EOFSTAB > $DISCO_MOUNT_POINT/etc/fstab.new
+/dev/sda3  /         ext4    defaults        1 1
+/dev/sda1  /boot     ext4    defaults        1 2
+/dev/sda2  swap      swap    defaults        0 0
+/dev/sdb   /mnt      ext4    defaults        0 0
+none       /dev/pts  devpts  gid=5,mode=620  0 0
+none       /dev/shm  tmpfs   defaults        0 0
+none       /proc     proc    defaults        0 0
+none       /sys      sysfs   defaults        0 0
+EOFSTAB
+
+#. Sistema il sistema di boot grub installandolo nuovamente
+#. 
+echo "Configura il grub"
+cd /mnt
+cp $grubtgz .
+tar -xzf $( basename $grubtgz )
+mv grub/* $DISCO_MOUNT_POINT/boot/grub/ 
+rm -rf grub
+rm grub.tgz
+#echo
+
+cp /opt/rossonet/ova/grub.conf $DISCO_MOUNT_POINT/boot/grub/grub.conf.new
+
+mv $DISCO_MOUNT_POINT/etc/fstab $DISCO_MOUNT_POINT/etc/fstab.bak
+mv $DISCO_MOUNT_POINT/boot/grub/grub.conf $DISCO_MOUNT_POINT/boot/grub/grub.conf.bak
+cp $DISCO_MOUNT_POINT/etc/fstab.new $DISCO_MOUNT_POINT/etc/fstab
+cp $DISCO_MOUNT_POINT/boot/grub/grub.conf.new $DISCO_MOUNT_POINT/boot/grub/grub.conf
+echo
+
+echo
+#debug
+#exit 0
+echo "Smonta"
+sync
+sleep 5
+cd /mnt
+umount $DISCO_MOUNT_POINT/boot
+umount $DISCO_MOUNT_POINT
+rm -rf $DISCO_MOUNT_POINT
+echo
+echo "Stacca le device di loop..."
+losetup -d $rootdev
+losetup -d $swapdev
+losetup -d $bootdev
+losetup -d $discodev
+
+echo
+echo "Installa GRUB..."
+( sleep 2 ; echo "device (hd0) $IMAGE" ; echo "geometry (hd0) 1566 255 63" ; echo "root (hd0,0)" ; echo "setup (hd0)" ; sleep 5 ; echo "quit" ) | grub --device-map=/dev/null
+echo
+cd /mnt
+mkdir -p /mnt/ova
+mv $IMAGE $nomemacchina.dsk
+echo "Trasforma in immagine VMware.."
+qemu-img convert -f raw -O vmdk $nomemacchina.dsk /mnt/ova/$nomemacchina.vmdk
+rm $nomemacchina.dsk
+echo
+echo "Creo il pacchetto ova"
+cat /opt/rossonet/ova/template.vmx | sed "s/<discolabel>/$nomemacchina/g" > /mnt/ova/$nomemacchina.vmx
+cp /opt/rossonet/ova/dati.vmdk /mnt/ova/
+cd /mnt/ova
+# Crea OVA
+ovftool $nomemacchina.vmx $nomemacchina.ova
+
+rm -f $nomemacchina.vmdk $nomemacchina.vmx dati.vmdk 
+
+chmod go+r /mnt/ova/$nomemacchina.ova
+url_string='http://www.rossonet.com/myip.php';
+echo "Cerca ip esterno..."
+WAN=$( curl $url_string 2> /dev/null | grep 'Current IP Address' | sed 's/^Current IP Address: //' | sed 's/<\/body>//' )
+if [ "$WAN" == "" ]; then WAN='<server>'; fi
+#. Se RsaveOVA è presente in /etc/rossonet/context.sh verrà usata come path di salvataggio
+#. 
+  if [ -z "$RsaveOVA" ]
+  then
+   mkdir -p /mnt/pubblico
+   mv /mnt/ova/$nomemacchina.ova /mnt/pubblico/$nomemacchina.ova
+   echo "Pacchetto creato in /mnt/pubblico/$nomemacchina.ova , raggiungibile via web: http://$WAN/pub/$nomemacchina.ova"
+  else
+   mkdir -p $RsaveOVA
+   cp /mnt/ova/$nomemacchina.ova $RsaveOVA/$nomemacchina.ova
+  fi
+exit 0

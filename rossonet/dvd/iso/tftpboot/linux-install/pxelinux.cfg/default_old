@@ -1,0 +1,14 @@
+default 1
+timeout 600
+prompt 1
+display msgs/boot.msg
+F1 msgs/boot.msg
+F2 msgs/general.msg
+F3 msgs/expert.msg
+F4 msgs/param.msg
+F5 msgs/rescue.msg
+F7 msgs/snake.msg
+
+label 1
+  kernel CentOS5.x/vmlinuz
+  append initrd=CentOS5.x/initrd.img ramdisk_size=8419 ks=http://cassettone.rossonet.com/varie/ks/centos.cfg ksdevice=eth0 vnc vncconnect=maos.rossonet.com:5911

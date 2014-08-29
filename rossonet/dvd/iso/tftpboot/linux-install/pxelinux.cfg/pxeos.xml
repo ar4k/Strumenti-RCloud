@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<OperatingSystems>
+     <OS Anonymous="1" Description="CentOS Base Rossonet" Diskless="0" Kernel="" Kickstart="http://10.13.0.93/pandemia/centos.cfg" Location="/centos/5/os/i386" Name="CentOS5.x" Password="" Protocol="HTTP" Server="http://mirror.crazynetwork.it" User=""/>
+ </OperatingSystems>

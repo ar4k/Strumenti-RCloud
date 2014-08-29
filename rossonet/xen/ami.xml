@@ -1,0 +1,38 @@
+<domain type='xen'>
+  <name><nome-da-sostituire></name>
+  <memory>1048576</memory>
+  <currentMemory>1048576</currentMemory>
+  <vcpu>1</vcpu>
+  <bootloader>/usr/bin/pygrub</bootloader>
+  <os>
+    <type>linux</type>
+  </os>
+  <clock offset='utc'/>
+  <on_poweroff>restart</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <devices>
+    <disk type='file' device='disk'>
+      <driver name='file'/>
+      <source file='<root-da-sostituire>'/>
+      <target dev='sda1' bus='scsi'/>
+    </disk>
+    <disk type='file' device='disk'>
+      <driver name='file'/>
+      <source file='<ephemeral-da-sostituire>'/>
+      <target dev='sda2' bus='scsi'/>
+    </disk>
+    <disk type='file' device='disk'>
+      <driver name='file'/>
+      <source file='<swap-da-sostituire>'/>
+      <target dev='sda3' bus='scsi'/>
+    </disk>
+    <interface type='bridge'>
+      <source bridge='xenbr0'/>
+      <script path='vif-bridge'/>
+    </interface>
+    <graphics type='vnc' keymap='it'/>
+    <console></console>
+  </devices>
+</domain>
+

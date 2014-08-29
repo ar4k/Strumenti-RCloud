@@ -1,0 +1,108 @@
+#!/usr/bin/python
+#
+# ddcprobe - stub code to output ddcprobe results from kudzu
+#
+# Michael Fulbright <msf@redhat.com>
+#
+# Copyright 2002 Red Hat, Inc.
+#
+# This software may be freely redistributed under the terms of the GNU
+# library public license.
+#
+# You should have received a copy of the GNU Library Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+
+import kudzu
+import sys
+
+doraw = 0
+dovideo = 0
+domonitor = 0
+for i in range(1,len(sys.argv)):
+    if sys.argv[i] == "--videocard":
+	dovideo = 1
+    elif sys.argv[i] == "--monitor":
+	domonitor = 1
+    elif sys.argv[i] == "--raw":
+	doraw = 1
+
+if len(sys.argv) == 1:
+    dovideo = 1
+    domonitor = 1
+
+if dovideo:
+    video = kudzu.probe(kudzu.CLASS_VIDEO, kudzu.BUS_DDC,kudzu.PROBE_ALL)
+    if video:
+	if not doraw:
+	    print "\nVideocard autoprobe results"
+
+	if video[0].desc:
+	    if not doraw:
+		print "Description:  %s" % (video[0].desc,)
+	    else:
+		print "description=%s" % (video[0].desc,)
+
+	if video[0].id:
+	    if not doraw:
+		print "Device ID  :  %s" % (video[0].id,)
+	    else:
+		print "id=%s" % (video[0].id,)
+
+	if video[0].mem:
+	    if not doraw:
+                if video[0].mem < 1024:
+		    print "Memory (KB):  %s" % (video[0].mem,)
+		else:
+		    print "Memory (MB):  %s" % (video[0].mem/1024,)
+	    else:
+		print "mem=%s" % (video[0].mem,)
+
+
+
+if domonitor:
+    monitor = kudzu.probe(kudzu.CLASS_MONITOR, kudzu.BUS_DDC, kudzu.PROBE_ALL)
+
+    if not doraw:
+	print "\nMonitor autoprobe results"
+	
+    if monitor:
+	if doraw:
+	    print "id=%s" % (monitor[0].id,)
+	else:
+	    print "ID: %s" % (monitor[0].id,)
+
+	if monitor[0].desc != None:
+	    monName = monitor[0].desc
+
+	    if doraw:
+		print "name=%s" % (monName,)
+	    else:
+		print "Name: %s" % (monName,)
+
+	if (monitor[0].horizSyncMin != 0 or
+	    monitor[0].horizSyncMax != 0 or
+	    monitor[0].vertRefreshMin != 0 or
+	    monitor[0].vertRefreshMax != 0):
+	    monHoriz = "%d-%d" % (monitor[0].horizSyncMin,
+				       monitor[0].horizSyncMax)
+	    monVert = "%d-%d" % (monitor[0].vertRefreshMin,
+				      monitor[0].vertRefreshMax)
+
+	    if doraw:
+		print "horiz=%s" % (monHoriz,)
+		print "vert=%s" % (monVert,)
+	    else:
+		print "Horizontal Sync (kHZ): %s" % (monHoriz,)
+		print "Vertical Sync (HZ)  : %s" % (monVert,)
+
+	if doraw:
+	    print "width=%s" % (monitor[0].physicalWidth,)
+	    print "height=%s" % (monitor[0].physicalHeight,)
+	else:
+	    print "Width (mm): %s" % (monitor[0].physicalWidth,)
+	    print "Height(mm): %s" % (monitor[0].physicalHeight,)
+    else:
+	if not doraw:
+	    print "Monitor autoprobe failed."

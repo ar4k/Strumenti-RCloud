@@ -1,0 +1,123 @@
+<?xml version="1.0" standalone="no"?> <!--*- mode: xml -*-->
+<!DOCTYPE glade-interface SYSTEM "http://glade.gnome.org/glade-2.0.dtd">
+
+<glade-interface>
+
+<widget class="GtkWindow" id="pupletWindow">
+  <property name="visible">True</property>
+  <property name="title" translatable="yes">window1</property>
+  <property name="type">GTK_WINDOW_TOPLEVEL</property>
+  <property name="window_position">GTK_WIN_POS_NONE</property>
+  <property name="modal">False</property>
+  <property name="resizable">True</property>
+  <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
+
+  <child>
+    <widget class="GtkEventBox" id="pupletBox">
+      <property name="visible">True</property>
+      <property name="visible_window">True</property>
+      <property name="above_child">False</property>
+      <signal name="button_press_event" handler="on_pupletBox_button_press_event" last_modification_time="Tue, 23 May 2006 00:50:21 GMT"/>
+      <signal name="popup_menu" handler="on_pupletBox_popup_menu" last_modification_time="Tue, 23 May 2006 00:50:29 GMT"/>
+
+      <child>
+	<placeholder/>
+      </child>
+    </widget>
+  </child>
+</widget>
+
+<widget class="GtkMenu" id="pupletPopupMenu">
+
+  <child>
+    <widget class="GtkMenuItem" id="update_info">
+      <property name="label" translatable="yes">_Update Info</property>
+      <property name="use_underline">True</property>
+      <signal name="activate" handler="on_update_info_activate" last_modification_time="Tue, 23 May 2006 01:33:43 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="refresh">
+      <property name="visible">True</property>
+      <property name="tooltip" translatable="yes">Refresh update information</property>
+      <property name="label" translatable="yes">_Refresh</property>
+      <property name="use_underline">True</property>
+      <signal name="activate" handler="on_refresh_activate" last_modification_time="Mon, 22 May 2006 21:24:11 GMT"/>
+
+      <child internal-child="image">
+	<widget class="GtkImage" id="image10">
+	  <property name="visible">True</property>
+	  <property name="stock">gtk-refresh</property>
+	  <property name="icon_size">1</property>
+	  <property name="xalign">0.5</property>
+	  <property name="yalign">0.5</property>
+	  <property name="xpad">0</property>
+	  <property name="ypad">0</property>
+	</widget>
+      </child>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="view_updates">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">_View Updates...</property>
+      <property name="use_underline">True</property>
+      <signal name="activate" handler="on_view_updates_activate" last_modification_time="Mon, 09 Apr 2007 20:19:34 GMT"/>
+
+      <child internal-child="image">
+	<widget class="GtkImage" id="image11">
+	  <property name="visible">True</property>
+	  <property name="stock">gtk-dialog-info</property>
+	  <property name="icon_size">1</property>
+	  <property name="xalign">0.5</property>
+	  <property name="yalign">0.5</property>
+	  <property name="xpad">0</property>
+	  <property name="ypad">0</property>
+	</widget>
+      </child>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkMenuItem" id="apply_updates">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">_Apply updates</property>
+      <property name="use_underline">True</property>
+      <signal name="activate" handler="on_apply_updates_activate" last_modification_time="Mon, 09 Apr 2007 20:19:34 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkSeparatorMenuItem" id="separator1">
+      <property name="visible">True</property>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="about">
+      <property name="label">gtk-about</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_about_activate" last_modification_time="Tue, 23 May 2006 01:11:17 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="quit">
+      <property name="visible">True</property>
+      <property name="label">gtk-quit</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_quit_activate" last_modification_time="Tue, 23 May 2006 01:11:17 GMT"/>
+    </widget>
+  </child>
+</widget>
+
+</glade-interface>

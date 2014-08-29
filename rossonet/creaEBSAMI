@@ -1,0 +1,217 @@
+#!/bin/bash
+#.
+#. Realizzato da Rossonet s.c.a r.l.
+#. Rilasciato con licenza GNU Affero General Public License
+#. la licenza AGPL è disponibile qui: http://www.gnu.org/licenses/agpl-3.0.html
+#.
+#. Per informazioni ed eventuali contratti di supporto:
+#. http://www.rossonet.com
+#. andrea.ambrosini@rossonet.com
+#
+#. Rossonet s.c.a r.l. distributes this code under GNU Affero General Public License ( AGPLv3 )
+#. All right not expressly granted are reserved.
+#
+#. Autore: Andrea Ambrosini
+#. Contributi:	Davide Prato ( davide.prato@rossonet.com )
+#.		Laura Baldassarri ( laura.baldassarri@rossonet.com )
+#.		Gianni Ghedini ( gianni.ghedini@acantho.com )
+#.
+# Descrizione Prodotto:
+#
+#.
+#. Questo script converte una macchina istanziata
+#. dallo storage ami S3 in una macchina EBS
+#.
+#. Con la macchina EBS, che ha il filesystem permanente,
+#. si può erogare servizio ai clienti in produzione e utilizzare 
+#. le microistanze.
+#.
+#. by Ambrosini - Rossonet s.c.a r.l.
+#.
+#. Carica sempre /etc/rossonet/ec2Account se presente
+if [ -f /etc/rossonet/ec2Account ]
+then
+ source /etc/rossonet/ec2Account
+else
+ echo "/etc/rossonet/ec2Account Non esiste..."
+fi
+#.
+#. Carica sempre /etc/rossonet/context.sh se presente
+if [ -f /etc/rossonet/context.sh ]
+then
+ source /etc/rossonet/context.sh
+ echo "-------------------------------------"
+ echo "DESCRIZIONE DEL CONTESTO OPERATIVO:"
+ echo -e $ConfDescrizione
+ echo "-------------------------------------"
+ echo
+else
+ echo "/etc/rossonet/context.sh Non esiste..."
+fi
+#.
+# Input da Utente e guida
+parametro1=$1
+
+while [ "$nomemacchina" == ""  ]
+do
+
+export nomemacchina=$parametro1
+
+if [ "$nomemacchina" == ""  ]
+then
+	echo -n "Inserisci il nome del progetto con cui nominare la macchina ( help per la guida o uscita ): "
+        read nomemacchina
+fi
+
+if [ "$nomemacchina" == "help" ]
+then
+nomemacchina=""
+grep "#\." /opt/rossonet/$( basename $0 ) | sed "s/^#\.//"
+exit 0
+fi
+#. -------------------------------------
+#. Usare il comando "uscita" per terminare
+#. ------------------------------------
+#.
+if [ "$nomemacchina" == "uscita" ]
+then
+nomemacchina=""
+exit 0
+fi
+done
+
+#. Utilizza per il nome del file i parametri configurati in /etc/rossonet/context.sh ( RpostNAME e RpreNAME_date )
+#.  
+if [ -z "$RpreNAME_date" ]
+then
+ echo "RpostNAME_date non popolata"
+else
+ preName=$(date $RpreNAME_date)'-'
+fi
+if [ -z "$RpostNAME" ]
+then
+ echo "RpostNAME non popolata"
+else
+ postName="-$RpostNAME"
+fi
+nomemacchina="$preName$nomemacchina$postName"
+echo "Nome utilizzato: $nomemacchina"
+
+NOME=$nomemacchina
+# Carica le variabili per EC2
+if ( curl -m 5 http://169.254.169.254/latest/meta-data/instance-id >& /dev/null )
+then
+	echo "OK siamo su una macchina Amazon"
+else
+	echo "$0 si puo' eseguire solo da macchine amazon"
+	exit 1
+fi
+
+INST_ID=$( curl http://169.254.169.254/latest/meta-data/instance-id 2> /dev/null )
+echo "-----------------------------"
+echo "Istanza Corrente: $INST_ID"
+NOMEAMI=$( ec2-describe-instances | grep $INST_ID 2> /dev/null | grep INSTANCE 2> /dev/null | cut -f3 )
+echo "AMI: $NOMEAMI"
+MATRICE=$( ec2-describe-images | grep $NOMEAMI 2> /dev/null | grep instance-store 2> /dev/null | cut -f3 | cut -d\/ -f2 )
+echo "Macchina Originale: $MATRICE"
+echo "-----------------------------"
+echo
+if [ -z $NOMEAMI ]
+then
+ echo "Non è possibile svolgere l'operazione"
+ echo "L'account AWS in uso deve essere lo stesso dell'istanza corrente"
+ exit 1
+fi
+DESCRIZIONE="Server $nomemacchina copiato da $MATRICE ( $NOMEAMI )"
+#. La configurazione normale prevede un disco da 10G.
+#. Se si vuole realizzare una macchina con un disco maggiore
+#. lanciare lo script seguito dal numero di Gb desiderati
+#. Esempio: #creaEBSAMI nome-0.1 25 ( Verrà creata una macchina con un
+#. disco da 25Gb )
+#.
+DIMENSIONI=${2:-'10'}
+EBS_DEVICE="/dev/xvdl"
+
+echo "Crea il Volume"
+ZONE=`curl http://169.254.169.254/latest/meta-data/placement/availability-zone`
+echo "Zona: $ZONE"
+VOL_ID=`ec2addvol -s $DIMENSIONI -z $ZONE | awk '{ print $2 }'`
+STATUS=creating
+while [ $STATUS != "available" ]
+do
+	echo Volume $STATUS, attendere la creazione del volume...
+	sleep 10
+	STATUS=`ec2dvol $VOL_ID | awk '{ print $5 }'`
+done
+
+echo "attacca il volume..."
+ec2attvol $VOL_ID -i $INST_ID -d /dev/sdh
+
+sleep 10
+
+echo "Copia l'immagine sul volume..."
+
+IMAGE_DIR='/mnt/tmp'
+EBS_MOUNT_POINT='/mnt/ebs'
+
+mkdir -p $EBS_MOUNT_POINT
+mkfs.ext4 -F -j $EBS_DEVICE
+mount  $EBS_DEVICE $EBS_MOUNT_POINT
+
+#make a local working copy
+cd /mnt
+rm -rf $IMAGE_DIR
+mkdir -p $IMAGE_DIR
+echo "Inizio la copia. Attendere..."
+#.
+#. Spegne i servizi critici ( configurati in /etc/rossonet/serviziDaGestire.txt )
+/opt/rossonet/spegniServizi.sh
+#.
+rsync -av --exclude=/etc/rossonet/*.rsyncremove --exclude=/root/.bash_history --exclude=/etc/rossonet/context.sh --exclude=/etc/rossonet/ec2Account --exclude=/etc/rossonet/ec2-cert.pem --exclude=/etc/rossonet/ec2-pk.pem --exclude=/home/*/.bash_history --exclude=/etc/ssh/ssh_host_* --exclude=/etc/ssh/moduli --exclude=/etc/udev/rules.d/*persistent-net.rules --exclude=/var/lib/ec2/* --exclude=/mnt/* --exclude=/proc/* --exclude=/tmp/* --exclude=/store/*  --exclude=/sys/* / $IMAGE_DIR >/dev/null
+/opt/rossonet/accendeServizi.sh
+
+#clear out log files
+cd $IMAGE_DIR/var/log
+for i in `ls ./**/*`; do
+  echo $i && echo -n> $i
+done
+
+# Togli il volume /mnt
+cat $IMAGE_DIR/etc/fstab | grep -v mnt > /tmp/fstab
+mv $IMAGE_DIR/etc/fstab $IMAGE_DIR/etc/fstab.bak
+mv /tmp/fstab $IMAGE_DIR/etc/
+
+# Questo giochetto con il tar permette di rendere più veloce la creazione
+# dello snapshot
+cd $IMAGE_DIR
+tar -cSf - -C ./ . | tar xvf - -C $EBS_MOUNT_POINT >/dev/null
+
+umount $EBS_MOUNT_POINT
+
+echo "Pulisce"
+cd /mnt
+rm -rf /mnt/tmp
+rm -rf $EBS_MOUNT_POINT
+
+echo "Sgancia il volume..."
+
+ec2detvol $VOL_ID -i $INST_ID
+
+echo "Crea un Snapshot..."
+SNAP_ID=`ec2addsnap $VOL_ID -d "copiato da $MATRICE ( $NOMEAMI )" | awk '{ print $2 }'`
+# now, wait for it
+STATUS=pending
+while [ $STATUS != "completed" ]
+do
+	echo volume $STATUS, Attendere lo snapshot completo...
+	sleep 20
+	STATUS=`ec2dsnap $SNAP_ID | awk '{ print $4 }'`
+done
+
+echo "Cancella il Volume..."
+ec2delvol $VOL_ID
+
+echo "REGISTRA LA MACCHINA"
+ec2reg -s $SNAP_ID -a x86_64 -d "$DESCRIZIONE" -n $NOME-ebs --kernel aki-71665e05
+echo "Operazione terminata"
+exit 0

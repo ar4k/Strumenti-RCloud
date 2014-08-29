@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export PYTHONPATH=/usr/share/system-config-keyboard
+/usr/bin/python /usr/share/system-config-keyboard/system-config-keyboard.py $*

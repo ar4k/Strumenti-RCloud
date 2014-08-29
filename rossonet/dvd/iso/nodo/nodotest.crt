@@ -1,0 +1,67 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 2 (0x2)
+        Signature Algorithm: md5WithRSAEncryption
+        Issuer: C=EU, ST=BO, L=Imola, O=Rossonet s.c.a r.l./emailAddress=andrea.ambrosini@rossonet.org
+        Validity
+            Not Before: Mar 15 15:54:01 2012 GMT
+            Not After : Mar 13 15:54:01 2022 GMT
+        Subject: C=EU, ST=BO, L=Imola, O=Rossonet s.c.a r.l., OU=Office, CN=nodotest/emailAddress=andrea.ambrosini@rossonet.org
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+            RSA Public Key: (1024 bit)
+                Modulus (1024 bit):
+                    00:e8:7e:ef:4f:cc:e8:9f:8a:0f:04:58:28:6b:38:
+                    f6:d3:ad:10:9a:b5:6a:bb:fa:cc:70:bb:d2:5f:e2:
+                    d7:95:f1:ce:84:8b:3e:63:a3:2c:13:81:cc:07:09:
+                    20:f4:59:f6:0a:f3:7d:28:81:9b:11:78:4f:8d:6d:
+                    af:8b:e5:4e:92:82:37:c6:4b:92:a9:d9:5e:51:11:
+                    75:4b:ae:42:81:c9:9b:db:29:13:6b:c9:c1:94:84:
+                    6a:a3:cc:e8:b4:30:53:e8:3e:bb:82:51:ba:ce:e5:
+                    28:f8:81:e8:f3:47:19:79:0b:51:ff:93:8a:27:49:
+                    5b:51:6b:75:cb:e9:7a:03:7b
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            Netscape Comment: 
+                OpenSSL Generated Certificate
+            X509v3 Subject Key Identifier: 
+                12:E5:4D:11:39:DC:0E:6E:FA:F2:5E:53:1E:AD:4C:18:62:84:F4:22
+            X509v3 Authority Key Identifier: 
+                keyid:D8:44:A8:1D:59:94:C3:EB:2D:21:60:48:1D:5A:1B:D4:30:B6:34:9A
+                DirName:/C=EU/ST=BO/L=Imola/O=Rossonet s.c.a r.l./emailAddress=andrea.ambrosini@rossonet.org
+                serial:DE:36:01:71:83:00:DE:AA
+
+    Signature Algorithm: md5WithRSAEncryption
+        e0:b7:10:cd:0f:bd:f8:fb:b1:64:b5:4e:b8:4a:3e:2f:28:bf:
+        43:0b:46:3f:19:60:2f:32:66:88:09:cc:8c:cb:dd:64:3f:ba:
+        a8:f0:b1:8b:2c:90:78:53:83:7e:f5:aa:1c:55:70:ca:9b:78:
+        66:8e:ac:b6:ae:c3:cc:e9:15:69:77:19:b7:73:c1:40:7e:6f:
+        65:69:16:d1:98:d1:ed:82:99:6b:ad:b4:98:6c:a7:90:58:86:
+        27:f1:66:4f:a4:7e:fd:8b:b6:2a:82:18:4e:4a:a6:cf:29:e3:
+        98:a2:40:9d:06:2b:a3:b4:59:ce:d8:a1:96:71:ca:5d:9d:ac:
+        61:6c
+-----BEGIN CERTIFICATE-----
+MIIDkDCCAvmgAwIBAgIBAjANBgkqhkiG9w0BAQQFADB2MQswCQYDVQQGEwJFVTEL
+MAkGA1UECBMCQk8xDjAMBgNVBAcTBUltb2xhMRwwGgYDVQQKExNSb3Nzb25ldCBz
+LmMuYSByLmwuMSwwKgYJKoZIhvcNAQkBFh1hbmRyZWEuYW1icm9zaW5pQHJvc3Nv
+bmV0Lm9yZzAeFw0xMjAzMTUxNTU0MDFaFw0yMjAzMTMxNTU0MDFaMIGaMQswCQYD
+VQQGEwJFVTELMAkGA1UECBMCQk8xDjAMBgNVBAcTBUltb2xhMRwwGgYDVQQKExNS
+b3Nzb25ldCBzLmMuYSByLmwuMQ8wDQYDVQQLEwZPZmZpY2UxETAPBgNVBAMTCG5v
+ZG90ZXN0MSwwKgYJKoZIhvcNAQkBFh1hbmRyZWEuYW1icm9zaW5pQHJvc3NvbmV0
+Lm9yZzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA6H7vT8zon4oPBFgoazj2
+060QmrVqu/rMcLvSX+LXlfHOhIs+Y6MsE4HMBwkg9Fn2CvN9KIGbEXhPjW2vi+VO
+koI3xkuSqdleURF1S65Cgcmb2ykTa8nBlIRqo8zotDBT6D67glG6zuUo+IHo80cZ
+eQtR/5OKJ0lbUWt1y+l6A3sCAwEAAaOCAQcwggEDMAkGA1UdEwQCMAAwLAYJYIZI
+AYb4QgENBB8WHU9wZW5TU0wgR2VuZXJhdGVkIENlcnRpZmljYXRlMB0GA1UdDgQW
+BBQS5U0ROdwObvryXlMerUwYYoT0IjCBqAYDVR0jBIGgMIGdgBTYRKgdWZTD6y0h
+YEgdWhvUMLY0mqF6pHgwdjELMAkGA1UEBhMCRVUxCzAJBgNVBAgTAkJPMQ4wDAYD
+VQQHEwVJbW9sYTEcMBoGA1UEChMTUm9zc29uZXQgcy5jLmEgci5sLjEsMCoGCSqG
+SIb3DQEJARYdYW5kcmVhLmFtYnJvc2luaUByb3Nzb25ldC5vcmeCCQDeNgFxgwDe
+qjANBgkqhkiG9w0BAQQFAAOBgQDgtxDND734+7FktU64Sj4vKL9DC0Y/GWAvMmaI
+CcyMy91kP7qo8LGLLJB4U4N+9aocVXDKm3hmjqy2rsPM6RVpdxm3c8FAfm9laRbR
+mNHtgplrrbSYbKeQWIYn8WZPpH79i7YqghhOSqbPKeOYokCdBiujtFnO2KGWccpd
+naxhbA==
+-----END CERTIFICATE-----

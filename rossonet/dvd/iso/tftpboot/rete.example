@@ -1,0 +1,4 @@
+#Comandi per abilitare il traffico di rete con due schede
+#( una verso esterno l'altra interna per il bootd )
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+echo 1 > /proc/sys/net/ipv4/ip_forward

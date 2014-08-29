@@ -1,0 +1,162 @@
+#!/bin/bash
+#.
+#. Realizzato da Rossonet s.c.a r.l.
+#. Rilasciato con licenza GNU Affero General Public License
+#. la licenza AGPL è disponibile qui: http://www.gnu.org/licenses/agpl-3.0.html
+#.
+#. Per informazioni ed eventuali contratti di supporto:
+#. http://www.rossonet.com
+#. andrea.ambrosini@rossonet.com
+#
+#. Rossonet s.c.a r.l. distributes this code under GNU Affero General Public License ( AGPLv3 )
+#. All right not expressly granted are reserved.
+#
+#. Autore: Andrea Ambrosini
+#. Contributi:	Davide Prato ( davide.prato@rossonet.com )
+#.		Laura Baldassarri ( laura.baldassarri@rossonet.com )
+#.		Gianni Ghedini ( gianni.ghedini@acantho.com )
+#.		Marco Nalon (marco.nalon@rossonet.com)
+#.
+# Descrizione Prodotto:
+#.
+#. Crea un modello di server virtuale Amazon
+#. e lo salva nel bucket configurato tramite le variabili d'ambiente.
+#. by Ambrosini Rossonet s.c.a r.l.
+#.
+# Variabili principali:
+#. Per cambiare l'utenza Amazon EC2 o S3 utilizzare
+#. il comando #service rossonetInit 
+#. Per verificare i parametri di connessione ad Amazon
+#. #env
+#.
+#. Carica sempre /etc/rossonet/ec2Account se presente
+if [ -f /etc/rossonet/ec2Account ]
+then
+ source /etc/rossonet/ec2Account
+else
+ echo "/etc/rossonet/ec2Account Non esiste..."
+fi 
+#.
+#. Carica sempre /etc/rossonet/context.sh se presente
+if [ -f /etc/rossonet/context.sh ]
+then
+ source /etc/rossonet/context.sh
+ echo "-------------------------------------"
+ echo "DESCRIZIONE DEL CONTESTO OPERATIVO:"
+ echo -e $ConfDescrizione
+ echo "-------------------------------------"
+ echo
+else
+ echo "/etc/rossonet/context.sh Non esiste..."
+fi
+#RpreNAME_date
+#RpostNAME
+#.
+# Input da Utente e guida
+HOME_ROSSONET=/opt/rossonet
+cd $HOME_ROSSONET
+parametro1=$1
+while [ "$nomemacchina" == ""  ]
+do
+nomemacchina=$parametro1
+if [ "$nomemacchina" == ""  ]
+then
+	echo -n "Inserisci il nome della macchina da salvare ( help per la guida o uscita ): "
+	read nomemacchina
+fi
+if [ "$nomemacchina" == "help" ]
+then
+nomemacchina=""
+grep "#\." $( basename $0 ) | sed "s/^#\.//"
+exit 0
+fi
+#. Usare il comando "uscita" per terminare
+#.
+if [ "$nomemacchina" == "uscita" ]
+then
+nomemacchina=""
+exit 0
+fi
+done
+
+#. Utilizza per il nome del file i parametri configurati in /etc/rossonet/context.sh ( RpostNAME e RpreNAME_date )
+#.  
+if [ -z "$RpreNAME_date" ]
+then
+ echo "RpreNAME_date non popolata"
+else
+ preName=$(date $RpreNAME_date)'-'
+fi
+if [ -z "$RpostNAME" ]
+then
+ echo "RpostNAME non popolata"
+else
+ postName="-$RpostNAME"
+fi
+nomemacchina="$preName$nomemacchina$postName"
+echo "Nome utilizzato: $nomemacchina"
+mkdir -p /mnt/tmp
+# Crea il disco
+IMAGE='/mnt/disco-xen.bin'
+XEN_MOUNT_POINT=/mnt/ec2-disk
+mkdir -p $XEN_MOUNT_POINT
+echo "Esegue: dd bs=1M count=10240 if=/dev/zero of=$IMAGE"
+dd bs=1M count=10240 if=/dev/zero of=$IMAGE
+echo "Formatta il disco..." 
+mkfs.ext4 -F -j $IMAGE
+echo
+echo "Monta il disco..." 
+mount  $IMAGE $XEN_MOUNT_POINT -o loop
+echo
+echo "Inizio la copia. Attendere..."
+#. Spegne i servizi critici durante la lavorazione ( /etc/rossonet/serviziDaGestire.txt )
+$HOME_ROSSONET/spegniServizi.sh
+#.
+rsync -av --exclude=/etc/rossonet/*.rsyncremove --exclude=/root/.bash_history --exclude=/etc/rossonet/context.sh --exclude=/etc/rossonet/ec2Account --exclude=/etc/rossonet/ec2-cert.pem --exclude=/etc/rossonet/ec2-pk.pem --exclude=/home/*/.bash_history --exclude=/etc/ssh/ssh_host_* --exclude=/etc/ssh/moduli --exclude=/etc/udev/rules.d/*persistent-net.rules --exclude=/var/lib/ec2/* --exclude=/mnt/* --exclude=/proc/* --exclude=/store/* --exclude=/tmp/* --exclude=/sys/* / $XEN_MOUNT_POINT >/dev/null
+$HOME_ROSSONET/accendeServizi.sh
+#clear out log files
+cd $XEN_MOUNT_POINT/var/log
+for i in `ls ./**/*`; do
+  echo $i && echo -n> $i
+done
+cd /mnt
+# Ripristina i file Originale AMAZON
+if [ -f $XEN_MOUNT_POINT/etc/fstab ]
+then
+ mv $XEN_MOUNT_POINT/etc/fstab $XEN_MOUNT_POINT/etc/fstab.bak
+ cp $HOME_ROSSONET/ami/fstab $XEN_MOUNT_POINT/etc/fstab
+fi
+if [ -f $XEN_MOUNT_POINT/boot/grub/grub.conf ]
+then
+ mv $XEN_MOUNT_POINT/boot/grub/grub.conf $XEN_MOUNT_POINT/boot/grub/grub.conf.bak
+ cp $HOME_ROSSONET/ami/grub.conf $XEN_MOUNT_POINT/boot/grub/grub.conf
+fi
+echo
+sync; sync
+echo "Smonta"
+sleep 5
+umount $XEN_MOUNT_POINT
+rm -rf $XEN_MOUNT_POINT
+echo
+# Lancia la creazione
+echo "Esegue: ec2-bundle-image --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY --image $IMAGE --prefix $nomemacchina --user $AWS_ACCOUNT_NUMBER --destination /mnt/tmp --arch x86_64 --kernel aki-71665e05"
+ec2-bundle-image --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY --image $IMAGE --prefix $nomemacchina --user $AWS_ACCOUNT_NUMBER --destination /mnt/tmp --arch x86_64 --kernel aki-71665e05
+echo
+echo Creazione Bundle Terminata
+echo
+# Upload della macchina su S3
+echo "Esegue: ec2-upload-bundle -b $AWS_AMI_BUCKET --manifest /mnt/tmp/$nomemacchina.manifest.xml -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY --location EU"
+ec2-upload-bundle -b $AWS_AMI_BUCKET --manifest /mnt/tmp/$nomemacchina.manifest.xml -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY --location EU
+echo Upload Terminato
+echo
+echo registra immagine
+echo "Esegue: ec2-register $AWS_AMI_BUCKET/$nomemacchina.manifest.xml -n $nomemacchina --description \"CentOS 6.x (x86_64) $nomemacchina\" --architecture x86_64 --kernel aki-71665e05"
+ec2-register $AWS_AMI_BUCKET/$nomemacchina.manifest.xml -n $nomemacchina --description "CentOS 6.x (x86_64) $nomemacchina" --architecture x86_64 --kernel aki-71665e05
+echo ok
+echo
+echo
+echo Ripulisce
+rm -rf /mnt/tmp
+rm -rf $IMAGE
+echo "Operazione terminata"
+exit 0

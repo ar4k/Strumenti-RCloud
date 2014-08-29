@@ -1,0 +1,378 @@
+#!/bin/bash
+# chkconfig: 2345 95 20
+# processname: rossonetInit
+# description: Legge il context in EC2, OpenNebula, e configurazioni remote.
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration
+[ -r /etc/sysconfig/network ] && . /etc/sysconfig/network
+
+# Replace the following environment variables for your system
+export PATH=:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+ 
+# Check that networking is configured
+if [ "${NETWORKING}" = "no" ]; then
+  echo "La Rete non funziona..."
+  exit 1
+fi
+# Carica sempre /etc/rossonet/context.sh se presente
+if [ -f /etc/rossonet/context.sh ]
+then
+ source /etc/rossonet/context.sh
+ echo "-------------------------------------"
+ echo "DESCRIZIONE DEL CONTESTO OPERATIVO:"
+ echo -e $ConfDescrizione
+ echo "-------------------------------------"
+ echo
+else
+ echo "/etc/rossonet/context.sh Non esiste..."
+fi
+#
+
+start() {
+# Ricrea la directory e crea la temp
+if [ -e /mnt/context ]
+then
+ rm -rf /mnt/context
+fi
+mkdir -p /mnt/context
+chmod 700 /mnt/context
+cd /mnt/context
+# Controlla se la macchina è ospitata in EC2
+mac_amazon=$( curl -m 10 -s http://169.254.169.254/latest/meta-data/mac )
+mac_macchina=$( ifconfig eth0 | grep HWaddr | sed 's/^.*HWaddr //' )
+if [ "$mac_amazon" == $mac_macchina ]
+then
+ echo "Macchina in Amazon EC2..."
+ echo "Scarico il contesto da file..."
+ curl -s http://169.254.169.254/latest/user-data > /mnt/context/contesto.tgz
+ if [ $( file /mnt/context/contesto.tgz | grep 'gzip compressed data' | wc -l ) -eq 1 ]
+ then
+  echo "Decomprimo..."
+  tar -xzf contesto.tgz
+  # Lancia le operazioni comuni
+  echo "Cancello l'archivio..."
+  rm -f contesto.tgz
+  comuni
+ else
+  echo "File di configurazione non riconosciuto con archivio gzip"
+ fi
+ #if [ 1 -eq 1 ]
+ #then
+#  echo "Configurazione remota via web"
+#  curl -s http://cassettone.rossonet.com/varie/testrossonet.RCloud.gpg > configurazione.RCloud.gpg
+#  if [ -f configurazione.RCloud.gpg ]
+#  then
+#   echo "Decripta"
+#   gpg --no-permission-warning --cipher-algo TWOFISH --batch --passphrase westing configurazione.RCloud.gpg
+#   if [ -f configurazione.RCloud ]
+#   then
+#    echo "Scompatta configurazione.RCloud..."
+#    tar -xzf configurazione.RCloud
+#    rm -f configurazione.RCloud
+#    rm -f configurazione.RCloud.gpg
+#    comuni
+#   else
+#    echo "Il file $dirContesti/$confFile.RCloud non esiste, forse è sbagliata la chiave"
+#   fi
+#  else
+#   echo "$dirContesti/$confFile.RCloud.gpg non esiste..."
+#  fi
+ #fi
+else
+if [ -e /etc/rossonet/LIVE ]
+then
+ echo "Live DVD... Non lavoro sul cdrom"
+else
+ echo "Macchina non in Amazon EC2..."
+ # Prova la configurazione via cdrom. Compatibile con OpenNebula e altri
+ CDROM_DEVICE=$(ls /dev/cdrom* | sort | head -n 1)
+ if [ -b "$CDROM_DEVICE" -a -n "$CDROM_DEVICE" ]; then
+  # Crea la temp per montare
+  mkdir -p /mnt/cdrom
+  echo "Trovato cdrom $CDROM_DEVICE, provo il mounting..."
+  mount -t iso9660 $CDROM_DEVICE /mnt/cdrom
+  # Copia tutto in context
+  cp -a /mnt/cdrom/* /mnt/context/
+  # Ripulisce
+  umount /mnt/cdrom
+  rm -rf /mnt/cdrom
+  # Lancia le operazioni comuni
+  comuni
+ fi
+fi
+fi
+}
+
+comuni() {
+#Operazioni Comuni
+if [ -f /mnt/context/context.sh ]; then
+ echo "Trovato il file /mnt/context/context.sh, lo copio in /etc/rossonet..."
+ cp /mnt/context/context.sh /etc/rossonet/
+ if [ -f /mnt/context/ec2Account ]; then
+  echo "Trovato file /mnt/context/ec2Account, copio ec2Account"
+  cp /mnt/context/ec2Account /etc/rossonet/
+  echo "Leggo la configurazione Amazon..."
+  chmod +x /etc/rossonet/ec2Account
+  source /etc/rossonet/ec2Account
+ fi
+ if [ -f /mnt/context/ec2-cert.pem ]; then
+  echo "Trovato file /mnt/context/ec2-cert.pem, copio ec2-cert.pem"
+  cp /mnt/context/ec2-cert.pem /etc/rossonet/
+ fi
+ if [ -f /mnt/context/ec2-pk.pem ]; then
+  echo "Trovato file /mnt/context/ec2-pk.pem, copio ec2-pk.pem"
+  cp /mnt/context/ec2-pk.pem /etc/rossonet/
+ fi
+ if [ -f /mnt/context/init.sh ]; then
+  echo "Trovato file /mnt/context/init.sh, eseguo /mnt/context/init.sh..."
+  . /mnt/context/init.sh
+  echo "Riavvia i servizi configurabili"
+  service openvpn restart
+  service ddclient restart
+ fi
+fi
+}
+ 
+stop() {
+  echo "Niente da fare..."
+}
+ 
+restart() {
+  stop
+  start
+}
+
+configurazione() {
+# Configura le cartelle
+if [ -e /mnt/context ]
+then
+ rm -rf /mnt/context
+fi
+mkdir -p /mnt/context
+chmod 700 /mnt/context
+cd /mnt/context/
+# Controlla l'esistenza del file
+if [ -f /etc/rossonet/$confFile.RCloud.gpg ]
+then
+ echo "Copio la configurazione da /etc/rossonet/$confFile.RCloud.gpg..."
+ cp /etc/rossonet/$confFile.RCloud.gpg /mnt/context/
+ echo "Decripta $confFile.RCloud.gpg ( richiede input dall'utente )..."
+ if [ -f $confFile.RCloud ]
+  then
+  rm -f $confFile.RCloud
+ fi
+ gpg --no-permission-warning --cipher-algo TWOFISH $confFile.RCloud.gpg
+ # Se esiste il file decriptato
+ if [ -f $confFile.RCloud ]
+ then
+  echo "Scompatta $confFile.RCloud..."
+  tar -xzf $confFile.RCloud
+  rm -f $confFile.RCloud.gpg
+  rm -f $confFile.RCloud
+  comuni
+ else
+  echo "Password Sbagliata!"
+  exit 1
+ fi
+else
+ echo "/etc/rossonet/$confFile.RCloud.gpg non esiste..."
+ exit 1
+fi
+}
+
+salva() {
+if [ -f /mnt/context/context.sh ]
+then
+ cd /mnt/context/
+ tar -czf /etc/rossonet/$confFile.RCloud *
+ cd /etc/rossonet
+ gpg --no-permission-warning --cipher-algo TWOFISH -i -c $confFile.RCloud
+ rm -f $confFile.RCloud
+else
+ echo "Non trovo /mnt/context/context.sh"
+ exit 1
+fi
+}
+
+pubblica() {
+if [ -f /mnt/context/context.sh ]
+then
+ echo "Cerca ip esterno..."
+ url_string='http://www.rossonet.com/myip.php';
+ WAN=$( curl $url_string 2> /dev/null | grep 'Current IP Address' | sed 's/^Current IP Address: //' | sed 's/<\/body>//' )
+ if [ "$WAN" == "" ]; then WAN='<server>'; fi
+ # Crea le directory 
+ mkdir -p /mnt/tmp-contesti
+ # Per motivi di sicurezza proteggo la directory temporanea
+ chmod 700 /mnt/tmp-contesti
+ # Creo il file di configurazione
+ cd /mnt/context/
+ tar -czf /mnt/tmp-contesti/$confFile.RCloud *
+ mkisofs -R -J -v -T -o /mnt/tmp-contesti/$confFile.iso /mnt/context 2> /dev/null
+ # cripto i due file se necessario
+ cd /mnt/tmp-contesti
+ if [ -z "$RsaveCONF" ]
+ then
+  dirContesti=/mnt/pubblico
+ else
+  dirContesti=$RsaveCONF
+ fi
+ mkdir -p $dirContesti
+ if [ -z $passFile ]
+ then
+  echo "Posiziono i file"
+  mv $confFile.RCloud $dirContesti/
+  echo "Configurazione per EC2 o interscambio in $dirContesti/$confFile.RCloud"
+  if [ -z $RsaveCONF ]
+  then
+   echo "ATTENZIONE IL FILE http://$WAN/pub/$confFile.RCloud CONTIENE CONFIGURAZIONI IN CHIARO!"
+   echo "RIMUOVERLO IL PRIMA POSSIBILE CON rm $dirContesti/$confFile.RCloud O TOGLIERE IL LINK SIMBOLICO /var/www/html/contesti"
+  fi
+  mv $confFile.iso $dirContesti/
+  echo "Configurazione in formato iso $dirContesti/$confFile.iso"
+  if [ -z $RsaveCONF ]
+  then
+   echo "ATTENZIONE IL FILE http://$WAN/pub/$confFile.iso CONTIENE CONFIGURAZIONI IN CHIARO!"
+   echo "RIMUOVERLO IL PRIMA POSSIBILE CON rm $dirContesti/$confFile.iso O TOGLIERE IL LINK SIMBOLICO /var/www/html/contesti"
+  fi
+ else
+  echo "Cripto i file..."
+  gpg --no-permission-warning --cipher-algo TWOFISH -i -c --batch --passphrase $passFile $confFile.RCloud
+  gpg --no-permission-warning --cipher-algo TWOFISH -i -c --batch --passphrase $passFile $confFile.iso
+  # Posiziono
+  # Se RsaveCONF è presente in /etc/rossonet/context.sh verrà usata come path di salvataggio
+  if [ -z "$RsaveCONF" ]
+  then
+   mkdir -p /mnt/pubblico
+   mv $confFile.RCloud.gpg /mnt/pubblico/
+   echo "Configurazione per EC2 o interscambio in /mnt/pubblico/$confFile.RCloud.gpg via web http://$WAN/pub/$confFile.RCloud.gpg"
+   mv $confFile.iso.gpg /mnt/pubblico/
+   echo "Configurazione in formato iso /mnt/pubblico/$confFile.iso.gpg via web http://$WAN/pub/$confFile.iso.gpg"
+  else
+   mkdir -p $RsaveCONF
+   mv $confFile.RCloud.gpg $RsaveCONF/
+   echo "Configurazione per EC2 o interscambio in $RsaveCONF/$confFile.RCloud.gpg"
+   mv $confFile.iso.gpg $RsaveCONF/
+   echo "Configurazione in formato iso $RsaveCONF/$confFile.iso.gpg"
+  fi
+ fi 
+# Rimuovo la directory temporanea
+ cd
+ rm -rf /mnt/tmp-contesti
+else
+ echo "Non trovo /mnt/context/context.sh"
+ exit 1
+fi
+}
+
+carica() {
+# Configura le cartelle
+if [ -e /mnt/context ]
+then
+ rm -rf /mnt/context
+fi
+mkdir -p /mnt/context
+chmod 700 /mnt/context
+cd /mnt/context/
+# Se RsaveCONF è presente in /etc/rossonet/context.sh verrà usata come path di salvataggio
+if [ -z "$RsaveCONF" ]
+then
+  dirContesti=/mnt/contesti
+else
+  dirContesti=$RsaveCONF
+fi
+if [ -z $passFile ]
+then
+# Non è popolato passfrase, quindi l'url non è presa in considerazione
+# Verifica l'eventuale file in nella dir contesti
+ if [ -f $dirContesti/$confFile.RCloud ]
+ then
+  echo "Copio la configurazione da $dirContesti/$confFile.RCloud..."
+  cp $dirContesti/$confFile.RCloud /mnt/context/$confFile.tgz
+  if [ -f $confFile.tgz ]
+  then
+   echo "Scompatta $confFile.tgz..."
+   tar -xzf $confFile.tgz
+   rm -f $confFile.tgz
+   comuni
+  else
+   echo "Errore nella copia di $dirContesti/$confFile.RCloud"
+   exit 1
+  fi
+ else
+  echo "$dirContesti/$confFile.RCloud non esiste..."
+  exit 1
+ fi
+else
+ # C'è una pass, verifico l'url
+ if [ -z $urlFile ]
+ then
+  # Solo Pass
+  if [ -f $dirContesti/$confFile.RCloud.gpg ]
+  then
+   echo "Copio la configurazione da $dirContesti/$confFile.RCloud.gpg..."
+   cp $dirContesti/$confFile.RCloud.gpg /mnt/context/$confFile.RCloud.gpg
+   echo "Decripta"
+   gpg --no-permission-warning --cipher-algo TWOFISH --batch --passphrase $passFile $confFile.RCloud.gpg
+   if [ -f $confFile.RCloud ]
+   then
+    echo "Scompatta $confFile.RCloud..."
+    tar -xzf $confFile.RCloud
+    rm -f $confFile.RCloud
+    rm -f $confFile.RCloud.gpg
+    comuni
+   else
+    echo "Il file $dirContesti/$confFile.RCloud non esiste, forse è sbagliata la chiave"
+    exit 1
+   fi
+  else
+   echo "$dirContesti/$confFile.RCloud.gpg non esiste..."
+   exit 1
+  fi
+ else
+  # Pass e url fornite
+  echo "Da completare..."
+ fi
+fi
+}
+ 
+# See how we were called.
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    restart
+    ;;
+  configurazione)
+    confFile=$2
+    configurazione
+    ;;
+  salva)
+    confFile=$2
+    salva
+    ;;
+  pubblica)
+    confFile=$2
+    passFile=$3
+    pubblica
+    ;;
+  carica)
+    confFile=$2
+    passFile=$3
+    urlFile=$4
+    carica
+    ;;
+
+  *)
+    echo $"Uso: $0 {start|stop|restart|configurazione <nome configurazione>|salva <nome configurazione>|pubblica <nome configurazione> [chiave]|carica <nome configurazione> [chiave]}"
+    exit 1
+esac
+ 
+exit $?

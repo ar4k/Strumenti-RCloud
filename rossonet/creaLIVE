@@ -1,0 +1,189 @@
+#!/bin/bash
+#.
+#. Realizzato da Rossonet s.c.a r.l.
+#. Rilasciato con licenza GNU Affero General Public License
+#. la licenza AGPL è disponibile qui: http://www.gnu.org/licenses/agpl-3.0.html
+#.
+#. Per informazioni ed eventuali contratti di supporto:
+#. http://www.rossonet.com
+#. andrea.ambrosini@rossonet.com
+#
+#. Rossonet s.c.a r.l. distributes this code under GNU Affero General Public License ( AGPLv3 )
+#. All right not expressly granted are reserved.
+#
+#. Autore: Andrea Ambrosini
+#. Contributi:	Davide Prato ( davide.prato@rossonet.com )
+#.		Laura Baldassarri ( laura.baldassarri@rossonet.com )
+#.		Gianni Ghedini ( gianni.ghedini@acantho.com )
+#.		Marco Nalon (marco.nalon@rossonet.com)
+#.
+# Descrizione Prodotto:
+#
+#.
+#. Questo script converte una macchina istanziata
+#. da una ami S3 in live dvd utilizzando come base il dvd di installazione
+#.
+#. by Ambrosini - Rossonet s.c.a r.l.
+#.
+#. Carica sempre /etc/rossonet/ec2Account se presente
+if [ -f /etc/rossonet/ec2Account ]
+then
+ source /etc/rossonet/ec2Account
+else
+ echo "/etc/rossonet/ec2Account Non esiste..."
+fi
+#.
+#. Carica sempre /etc/rossonet/context.sh se presente
+if [ -f /etc/rossonet/context.sh ]
+then
+ source /etc/rossonet/context.sh
+ echo "-------------------------------------"
+ echo "DESCRIZIONE DEL CONTESTO OPERATIVO:"
+ echo -e $ConfDescrizione
+ echo "-------------------------------------"
+ echo
+else
+ echo "/etc/rossonet/context.sh Non esiste..."
+fi
+#.
+
+# Input da Utente e guida
+cd /mnt
+parametro1=$1
+
+while [ "$nomemacchina" == ""  ]
+do
+
+nomemacchina=$parametro1
+
+if [ "$nomemacchina" == ""  ]
+then
+	echo -n "Inserisci il nome del progetto con cui nominare la macchina ( help per la guida o uscita ): "
+        read nomemacchina
+fi
+
+if [ "$nomemacchina" == "help" ]
+then
+nomemacchina=""
+grep "#\." /opt/rossonet/$( basename $0 ) | sed "s/^#\.//"
+exit 0
+fi
+#. -------------------------------------
+#. Usare il comando uscita per terminare
+#. ------------------------------------
+if [ "$nomemacchina" == "uscita" ]
+then
+nomemacchina=""
+exit 0
+fi
+done
+
+#. Utilizza per il nome del file i parametri configurati in /etc/rossonet/context.sh ( RpostNAME e RpreNAME_date )
+#.  
+if [ -z "$RpreNAME_date" ]
+then
+ echo "RpostNAME_date non popolata"
+else
+ preName=$(date $RpreNAME_date)'-'
+fi
+if [ -z "$RpostNAME" ]
+then
+ echo "RpostNAME non popolata"
+else
+ postName="-$RpostNAME"
+fi
+nomemacchina="$preName$nomemacchina$postName"
+echo "Nome utilizzato: $nomemacchina"
+
+NOME=$nomemacchina
+IMAGE='/mnt/disco.bin'
+XEN_MOUNT_POINT='/mnt/xen-mnt'
+
+echo
+echo "Crea il disco su filesystem..."
+dd bs=1M count=10240 if=/dev/zero of=$IMAGE
+echo
+echo "Crea il mount point..."
+mkdir -p $XEN_MOUNT_POINT
+echo
+echo "Formatta il disco..." 
+mkfs.ext4 -F $IMAGE
+echo
+echo "Monta il disco..." 
+mount $IMAGE $XEN_MOUNT_POINT -o loop
+echo
+echo "Copia l'immagine sul disco..."
+#make a local working copy
+#rm -rf /mnt/tmp
+#mkdir /mnt/tmp
+echo "Inizio la copia. Attendere..."
+
+#.
+#. Spegne i servizi critici ( configurati in /etc/rossonet/serviziDaGestire.txt )
+/opt/rossonet/spegniServizi.sh
+#.
+rsync -av --exclude=/etc/rossonet/*.rsyncremove --exclude=/root/.bash_history --exclude=/etc/rossonet/context.sh --exclude=/etc/rossonet/ec2Account --exclude=/etc/rossonet/ec2-cert.pem --exclude=/etc/rossonet/ec2-pk.pem --exclude=/home/*/.bash_history --exclude=/etc/ssh/ssh_host_* --exclude=/etc/ssh/moduli --exclude=/etc/udev/rules.d/*persistent-net.rules --exclude=/var/lib/ec2/* --exclude=/mnt/* --exclude=/proc/* --exclude=/tmp/* --exclude=/store/*  --exclude=/sys/* / $XEN_MOUNT_POINT >/dev/null
+
+# Accende i servizi
+#
+/opt/rossonet/accendeServizi.sh
+
+#clear out log files
+cd $XEN_MOUNT_POINT/var/log
+for i in `ls ./**/*`; do
+  echo $i && echo -n> $i
+done
+
+# Marca come livecd
+echo "Creato il:" > $XEN_MOUNT_POINT/etc/rossonet/LIVE
+date >> $XEN_MOUNT_POINT/etc/rossonet/LIVE
+
+# Ripristina i file Originale AMAZON
+if [ -f $XEN_MOUNT_POINT/etc/fstab ]
+then
+ mv $XEN_MOUNT_POINT/etc/fstab $XEN_MOUNT_POINT/etc/fstab.bak
+ cp /opt/rossonet/live/fstab $XEN_MOUNT_POINT/etc/fstab
+fi
+sync;sync
+echo
+echo "Smonta"
+sleep 5
+cd /mnt
+umount $XEN_MOUNT_POINT
+rm -rf $XEN_MOUNT_POINT
+echo
+echo "Crea la struttura della directory..."
+mkdir -p /mnt/live
+destinazione="/mnt/live/$nomemacchina"
+cp -a /opt/rossonet/live/livecd $destinazione
+echo
+echo "Crea il disco squashfs..."
+mkdir -p /mnt/live/LiveOS
+mv $IMAGE /mnt/live/LiveOS/ext3fs.img
+e2label /mnt/live/LiveOS/ext3fs.img _CentOS-6.3-x86_64
+cd /mnt/live
+mksquashfs LiveOS $destinazione/LiveOS/squashfs.img -keep-as-directory
+rm -rf LiveOS
+cd /mnt/live
+echo "Crea il DVD..."
+mkisofs -o $nomemacchina.iso -v -J -R -D -A CentOS-6.3-x86_64-LiveDVD -V CentOS-6.3-x86_64-LiveDVD -no-emul-boot -boot-info-table -boot-load-size 4 -b isolinux/isolinux.bin -c isolinux/boot.cat $destinazione
+echo
+echo "Ripulisce..."
+rm -rf $destinazione
+url_string='http://www.rossonet.com/myip.php';
+echo "Cerca ip esterno..."
+WAN=$( curl $url_string 2> /dev/null | grep 'Current IP Address' | sed 's/^Current IP Address: //' | sed 's/<\/body>//' )
+if [ "$WAN" == "" ]; then WAN='<server>'; fi
+
+#. Se RsaveXEN è presente in /etc/rossonet/context.sh verrà usata come path di salvataggio
+#. 
+  if [ -z "$RsaveDVD" ]
+  then
+   mkdir -p /mnt/pubblico
+   mv /mnt/live/$nomemacchina.iso /mnt/pubblico/$nomemacchina.iso
+   echo "Pacchetto creato in /mnt/pubblico/$nomemacchina.iso , raggiungibile via web: http://$WAN/pub/$nomemacchina.iso"
+  else
+   mkdir -p $RsaveDVD
+   cp /mnt/live/$nomemacchina.iso $RsaveDVD/live-$nomemacchina.iso
+  fi
+exit 0

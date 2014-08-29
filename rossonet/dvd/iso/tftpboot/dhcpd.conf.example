@@ -1,0 +1,28 @@
+# Si ipotizza una rete 192.168.147.0/24
+# con default gw e tftp server su 192.168.147.253
+
+
+option domain-name "rossonet.com";
+option domain-name-servers 193.43.2.1;
+
+default-lease-time 600;
+max-lease-time 7200;
+ddns-update-style ad-hoc;
+
+log-facility local7;
+
+
+
+subnet 192.168.147.0 netmask 255.255.255.0 {
+  range 192.168.147.50 192.168.147.80;
+  option routers 192.168.147.254;
+  allow booting;
+  allow bootp;
+  class "pxeclients" { 
+	match if substring(option vendor-class-identifier, 0, 9) = "PXEClient";
+ 	next-server 192.168.147.253;
+	filename "linux-install/pxelinux.0";
+	}
+
+}
+

@@ -1,0 +1,65 @@
+
+#
+#
+# User-specific file contexts, generated via /usr/sbin/genhomedircon
+# use semanage command to manage system users in order to change the file_context
+#
+#
+
+
+#
+# Home Context for user user_u
+#
+
+/home/[^/]*/.+	user_u:object_r:user_home_t:s0
+/home/[^/]*/.virtinst(/.*)?	user_u:object_r:virt_content_t:s0
+/home/[^/]*/.*/plugins/nprhapengine\.so.*	--	user_u:object_r:textrel_shlib_t:s0
+/home/[^/]*/.*/plugins/libflashplayer\.so.*	--	user_u:object_r:textrel_shlib_t:s0
+/home/[^/]*/((www)|(web)|(public_html)|(public_git))(/.+)?	user_u:object_r:httpd_user_content_t:s0
+/home/[^/]*/bin(/.*)?	user_u:object_r:home_bin_t:s0
+/home/[^/]*/\.ssh(/.*)?	user_u:object_r:sshd_key_t:s0
+/home/[^/]*/\.java(/.*)?	user_u:object_r:user_mozilla_home_t:s0
+/home/[^/]*/\.galeon(/.*)?	user_u:object_r:user_mozilla_home_t:s0
+/home/[^/]*/\.mozilla(/.*)?	user_u:object_r:user_mozilla_home_t:s0
+/home/[^/]*/\.phoenix(/.*)?	user_u:object_r:user_mozilla_home_t:s0
+/home/[^/]*/\.mozilla(/.*)?/plugins/libflashplayer\.so.*	--	user_u:object_r:textrel_shlib_t:s0
+/home/[^/]*/\.netscape(/.*)?	user_u:object_r:user_mozilla_home_t:s0
+/home/[^/]*/\.spamassassin(/.*)?	user_u:object_r:spamassassin_home_t:s0
+/home/[^/]*/VirtualMachines(/.*)?	user_u:object_r:virt_image_t:s0
+/home/[^/]*/cxoffice/bin/wine.+	--	user_u:object_r:wine_exec_t:s0
+/home/[^/]*/VirtualMachines/isos(/.*)?	user_u:object_r:virt_content_t:s0
+/home/[^/]*	-d	user_u:object_r:user_home_dir_t:s0
+/home/[^/]*/\.k5login	--	user_u:object_r:krb5_home_t:s0
+/home/[^/]*/\.fetchmailrc	--	user_u:object_r:fetchmail_home_t:s0
+/home/lost\+found/.*	<<none>>
+/home	-d	system_u:object_r:home_root_t:s0
+/home/\.journal	<<none>>
+/home/lost\+found	-d	system_u:object_r:lost_found_t:s0
+
+
+
+#
+# Home Context for user root
+#
+
+/root/.+	root:object_r:user_home_t:s0
+/root/.virtinst(/.*)?	root:object_r:virt_content_t:s0
+/root/.*/plugins/nprhapengine\.so.*	--	root:object_r:textrel_shlib_t:s0
+/root/.*/plugins/libflashplayer\.so.*	--	root:object_r:textrel_shlib_t:s0
+/root/((www)|(web)|(public_html)|(public_git))(/.+)?	root:object_r:httpd_user_content_t:s0
+/root/bin(/.*)?	root:object_r:home_bin_t:s0
+/root/\.ssh(/.*)?	root:object_r:sshd_key_t:s0
+/root/\.java(/.*)?	root:object_r:user_mozilla_home_t:s0
+/root/\.galeon(/.*)?	root:object_r:user_mozilla_home_t:s0
+/root/\.mozilla(/.*)?	root:object_r:user_mozilla_home_t:s0
+/root/\.phoenix(/.*)?	root:object_r:user_mozilla_home_t:s0
+/root/\.mozilla(/.*)?/plugins/libflashplayer\.so.*	--	root:object_r:textrel_shlib_t:s0
+/root/\.netscape(/.*)?	root:object_r:user_mozilla_home_t:s0
+/root/\.spamassassin(/.*)?	root:object_r:spamassassin_home_t:s0
+/root/VirtualMachines(/.*)?	root:object_r:virt_image_t:s0
+/root/cxoffice/bin/wine.+	--	root:object_r:wine_exec_t:s0
+/root/VirtualMachines/isos(/.*)?	root:object_r:virt_content_t:s0
+/root	-d	root:object_r:user_home_dir_t:s0
+/root/\.k5login	--	root:object_r:krb5_home_t:s0
+/root/\.fetchmailrc	--	root:object_r:fetchmail_home_t:s0
+

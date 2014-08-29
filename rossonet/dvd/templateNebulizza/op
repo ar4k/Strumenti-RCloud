@@ -1,0 +1,14 @@
+name = "op"
+maxmem = 768
+memory = 768
+vcpus = 2
+bootloader = '/usr/bin/pygrub'
+extra = " ro"
+on_poweroff = "restart"
+on_reboot = "restart"
+on_crash = "restart"
+vnc=1
+vncunused=0
+vncdisplay=2
+disk = [ "file:/opt/op/op.bin,sda1,w", "file:/opt/op/ephemeral.ext3,sda2,w", "file:/opt/op/swap.img,sda3,w" ]
+vif = [ "mac=00:16:3e:f7:12:d7,bridge=xenbr0,script=vif-bridge" ]

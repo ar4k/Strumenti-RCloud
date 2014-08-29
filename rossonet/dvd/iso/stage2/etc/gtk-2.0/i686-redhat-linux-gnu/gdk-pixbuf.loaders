@@ -1,0 +1,18 @@
+# GdkPixbuf Image Loader Modules file
+# Automatically generated file, do not edit
+# Created by gdk-pixbuf-query-loaders from gtk+-2.10.4
+#
+# LoaderDir = /usr/lib/gtk-2.0/2.10.0/loaders
+#
+"/usr/lib/gtk-2.0/2.10.0/loaders/libpixbufloader-png.so"
+"png" 5 "gtk20" "The PNG image format"
+"image/png" ""
+"png" ""
+"\211PNG\r\n\032\n" "" 100
+
+"/usr/lib/gtk-2.0/2.10.0/loaders/libpixbufloader-xpm.so"
+"xpm" 4 "gtk20" "The XPM image format"
+"image/x-xpixmap" ""
+"xpm" ""
+"/* XPM */" "" 100
+

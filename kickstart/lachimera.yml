@@ -1,0 +1,50 @@
+--- 
+Deployment: 
+  Districts: 
+  - node_hosts: master.nodi.lachimera.net
+    gear_size: small
+    name: Default
+  Global: 
+    user_default_gear_sizes: small
+    valid_gear_sizes: small
+    default_gear_size: small
+  DNS: 
+    app_domain: app.lachimera.net
+    register_components: Y
+    component_domain: nodi.lachimera.net
+    deploy_dns: Y
+  Hosts: 
+  - host: master.nodi.lachimera.net
+    load_balancer: N
+    roles: 
+    - msgserver
+    - dbserver
+    - nameserver
+    - broker
+    - node
+    state: new
+    ip_interface: eth0
+    db_replica_primary: N
+    openshift_user: rossonet
+    mongodb_admin_user: admin
+    mongodb_admin_password: <PASSWORD>
+    mcollective_user: mcollective
+    mcollective_password: <PASSWORD>
+    mongodb_broker_user: openshift
+    ssh_host: localhost
+    named_ip_addr: <PUB_IP>
+    ip_addr: <PUB_IP>
+    user: root
+    openshift_password: <PASSWORD>
+    mongodb_broker_password: <PASSWORD>
+Vendor: Rossonet s.c.a r.l.
+Version: 0.0.1
+Subscription: 
+  repos_base: https://mirror.openshift.com/pub/origin-server/release/4/rhel-6
+  puppet_repo_rpm: http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
+  type: yum
+  os_optional_repo: http://download.fedoraproject.org/pub/epel/6/$basearch
+  jenkins_repo_base: http://pkg.jenkins-ci.org/redhat
+Description: Configurazione AR44 Rossonet per OpenShift.
+Name: Configurazione AR4K OpenShift Master
+
