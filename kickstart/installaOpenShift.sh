@@ -292,6 +292,8 @@ php54-php-soap
 php54-php-pear
 php-xml
 php54-php-mbstring
+rubygem-rdoc
+telnet
 LISTAPOST
 
 #MariaDB-server
