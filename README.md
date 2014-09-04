@@ -37,4 +37,17 @@ inserire il seguente parametro al grub del network cd o install cd:
 
 ks=http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/go.ks
 
+o
+
+ks=http://go.rossonet.net/ks
+
+Il relativo file di configurazione di Apache
+
+<VirtualHost *:80>
+DocumentRoot /var/www/html
+ServerName go.rossonet.net
+Redirect /ks http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/go.ks
+</VirtualHost>
+
+
 MOLTI FILE SONO IN CACHE NELLE DIR RPM,JAR E TGZ se dovessero sparire dalla rete.
