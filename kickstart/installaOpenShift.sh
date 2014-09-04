@@ -412,9 +412,20 @@ do
 done
 
 # Patch per cartuccia Tomcat 7
-echo >> /usr/libexec/openshift/cartridges/jbossews/bin/setup
-echo "# Correzione bug by Ambrosini" >> /usr/libexec/openshift/cartridges/jbossews/bin/setup
-echo 'ln -sf ${SYSTEM_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar ${OPENSHIFT_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar' >> /usr/libexec/openshift/cartridges/jbossews/bin/setup
+file1=/usr/libexec/openshift/cartridges/jbossews/bin/setup
+if [ -e $file1 ]
+then 
+	echo >> $file1
+	echo "# Correzione bug by Ambrosini" >> $file1
+	echo 'ln -sf ${SYSTEM_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar ${OPENSHIFT_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar' >> $file1
+fi
+# anche nella cache del nodo
+file2=/var/lib/openshift/.cartridge_repository/redhat-jbossews/0.0.19/bin/setup
+if [ -e $file2 ]
+	echo >> $file2
+	echo "# Correzione bug by Ambrosini" >> $file2
+	echo 'ln -sf ${SYSTEM_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar ${OPENSHIFT_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar' >> $file2
+fi
 
 echo "Lancio la diagnostica.." >> $console
 cd $dir_installazione
