@@ -24,7 +24,7 @@
 #	  passwd -l root
 #	  # Installa OpenShift
 #	  cd /root
-#	  wget http://rossonet.rossonet.net/indefero/index.php/p/go/source/file/master/CentOS6/EC2/installaOpenShift.sh
+#	  wget http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
 #	  chmod +x installaOpenShift.sh
 #	  /root/installaOpenShift.sh
 #	  #
@@ -54,6 +54,8 @@
 #hostName="go.nodi.ar4k.net"
 confUrl=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f1)
 hostName=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f2)
+# eventuali parametri di configurazione vanno inseriti in /root/go.conf
+# per i virtualizzatori con CDROM come parametro 
 if [ -f /root/go.conf ]
 then
 	confUrl=$(cat /root/go.conf | cut -d\; -f1)
@@ -63,6 +65,7 @@ fi
 console="/root/debug.log"
 dir_installazione="/root/openshift"
 
+# Marca le macchine già installate
 if [ -f /root/ar4k.mark ]
 then
 	echo "sistema installato precedentemente... esco." >> $console
@@ -92,7 +95,7 @@ cat >> $console << ROSSONET_WELCOME
 
 AR4K OpenShift Origin
 Il sistema installerà un sistema CentOS 6.x con OpenShift origin.
-per informazioni e supporto http://go.ar4k.eu
+per informazioni e supporto http://www.ar4k.eu
 
 Installazione automatica creata da Rossonet s.c.a r.l.
 per maggiori informazioni scrivere a origami@rossonet.com
@@ -195,6 +198,8 @@ tar -xzf apache-tomcat-7.0.55.tar.gz
 mv apache-tomcat-7.0.55 /opt/
 ln -s /opt/apache-tomcat-7.0.55 /etc/alternatives/tomcat-7.0
 ln -s /opt/apache-tomcat-7.0.55 /usr/share/tomcat7
+wget  http://repo.ar4k.eu/raw/strumenti-go.git/master/jar/commons-logging-tomcat-juli.jar
+cp commons-logging-tomcat-juli.jar /usr/share/tomcat7/bin/
 
 echo "Installo Maven 3" >> $console
 wget http://apache.fastbull.org/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz

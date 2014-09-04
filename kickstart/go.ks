@@ -5,7 +5,7 @@ skipx
 
 # Repository opensource utilizzati
 url --url=http://mirror.centos.org/centos/6/os/x86_64
-repo --name=rossonet --baseurl=http://rossonet.rossonet.net/rossonet/rpmrossonet/x86_64
+#repo --name=rossonet --baseurl=http://rossonet.rossonet.net/rossonet/rpmrossonet/x86_64
 repo --name=updates --baseurl=http://mirror.centos.org/centos/6/updates/x86_64
 repo --name=epel --baseurl=http://download.fedoraproject.org/pub/epel/6/x86_64
 
@@ -86,7 +86,7 @@ echo
 
 ########################################################################
 
-echo "http://repo.ar4k.eu/raw/boot-go.git/master/bottegaio.yml;master.nodi.bottegaio.net" > /root/go.conf
+echo "http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/bottegaio.yml;master.nodi.lachimera.net" > /root/go.conf
 
 ########################################################################
 
@@ -94,7 +94,7 @@ cat >> /etc/rc.local << ROSSONET_POST
 
 #Post installazione AR4K
 cd /root
-wget http://repo.ar4k.eu/raw/boot-go.git/master/installaOpenShift.sh
+wget http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
 chmod +x installaOpenShift.sh
 /root/installaOpenShift.sh
 
