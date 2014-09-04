@@ -422,6 +422,7 @@ fi
 # anche nella cache del nodo
 file2=/var/lib/openshift/.cartridge_repository/redhat-jbossews/0.0.19/bin/setup
 if [ -e $file2 ]
+then
 	echo >> $file2
 	echo "# Correzione bug by Ambrosini" >> $file2
 	echo 'ln -sf ${SYSTEM_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar ${OPENSHIFT_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar' >> $file2
