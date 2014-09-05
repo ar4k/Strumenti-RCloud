@@ -49,6 +49,7 @@
 # Il file /root/firstrun permette il cambio della password al prossimo riavvio e poi si cancella
 # Il disco deve essere almeno di 10GB
 
+
 # Leggo il parametro EC2 della configurazione
 #confUrl="http://rossonet.rossonet.net/indefero/index.php/p/go/source/file/master/CentOS6/ar4k.yml"
 #hostName="go.nodi.ar4k.net"
@@ -64,6 +65,8 @@ fi
 #console="/dev/hvc0"
 console="/root/debug.log"
 dir_installazione="/root/openshift"
+
+tail -F $console > /dev/tty1
 
 # Marca le macchine già installate
 if [ -f /root/ar4k.mark ]
