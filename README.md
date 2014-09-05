@@ -41,6 +41,17 @@ o
 
 ks=http://go.rossonet.net/ks
 
+Per creare una macchina virtuale XEN o KVM:
+
+virt-install -n <nome macchina virtuale> -r 1600 --vcpus=1 --os-variant=rhel6 --paravirt -w bridge:xenbr0 --disk path=/opt/images/rossonet.img,size=16 -l http://mirror.centos.org/centos/6.5/os/x86_64/ -x "ks=http://go.rossonet.net/ks proxy=http://andrea.ambrosini:xxxxxxxx@proxyvip.adn.intra:8080 ip=10.10.21.76 netmask=255.255.255.240 dns=10.10.21.1 gateway=10.10.21.100" --os-type=linux
+
+- l'opzione --paravirt funziona solo su macchine xen
+
+il video demo è realizzato con questo comando su macchina locale:
+
+virt-install -n openshift --ram 2048 --vcpus=1 --os-variant=rhel6 -w network:default --disk path=/mnt/rossonet.img,size=16 -l http://mirror.centos.org/centos/6.5/os/x86_64/ -x "ks=http://go.rossonet.net/ks" --os-type=linux
+
+
 Il relativo file di configurazione di Apache
 
 <VirtualHost *:80>
