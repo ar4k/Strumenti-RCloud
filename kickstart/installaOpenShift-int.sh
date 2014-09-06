@@ -65,8 +65,6 @@ fi
 console="/root/debug.log"
 dir_installazione="/root/openshift"
 
-tail -F $console > /dev/tty1
-
 # Marca le macchine già installate
 if [ -f /root/ar4k.mark ]
 then

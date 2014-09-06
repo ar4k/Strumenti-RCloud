@@ -96,7 +96,9 @@ cat >> /etc/rc.local << ROSSONET_POST
 cd /root
 wget http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
 chmod +x installaOpenShift.sh
+tail -F debug.log > /dev/tty1 &
 /root/installaOpenShift.sh
+killall tail
 
 ROSSONET_POST
 %end
