@@ -28,6 +28,7 @@ per esempio:
 
 http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/bottegaio.yml;master.nodi.bottegaio.net
 http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml;master.nodi.ar4k.net
 
 Per i nostri test usiamo l'ami: 20140821-OpenShift-Template (ami-d6ae70a1)
 
@@ -67,9 +68,9 @@ Redirect /esterno http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/go.k
 Redirect /interno http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/internal.ks
 </VirtualHost>
 
-in EC2, su una macchina adeguata:
+in EC2, su una macchina adeguata (ami-230b1b57):
 
-bash <(curl -sL http://go.rossonet.net/ec2)
+bash <(curl -sL http://go.rossonet.net/ec2) http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml master.nodi.ar4k.net
 
 
 MOLTI FILE SONO IN CACHE NELLE DIR RPM,JAR E TGZ se dovessero sparire dalla rete.

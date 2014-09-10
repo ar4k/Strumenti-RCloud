@@ -61,6 +61,14 @@ then
 	confUrl=$(cat /root/go.conf | cut -d\; -f1)
 	hostName=$(cat /root/go.conf | cut -d\; -f2)
 fi
+
+# Per passare i parametri da linea di comando
+if [ "$2" != "" ]
+then
+        confUrl=$1
+        hostName=$2
+fi
+
 #console="/dev/hvc0"
 console="/root/debug.log"
 dir_installazione="/root/openshift"
@@ -304,6 +312,7 @@ rubygem-rdoc
 telnet
 rubygem-openshift-origin-auth-kerberos
 ipa-client
+c-ares-1.7.0-6.el6
 LISTAPOST
 
 #MariaDB-server
