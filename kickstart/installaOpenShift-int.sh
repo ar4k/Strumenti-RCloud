@@ -109,6 +109,9 @@ yum install -y @server-policy ntp ntpdate git man sudo strace vim-enhanced wget 
 
 cd $dir_installazione
 
+echo "Setto timezone Roma"
+cp -f /usr/share/zoneinfo/Europe/Rome /etc/localtime
+
 echo "Installo la JDK" >> $console
 wget http://marx.rossonet.net/ar4k/jdk-7u67-linux-x64.rpm
 yum localinstall -y  jdk-7u67-linux-x64.rpm &>> $dir_installazione/yum.log
