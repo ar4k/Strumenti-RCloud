@@ -336,9 +336,13 @@ yum update -y
 
 cd $dir_installazione
 
-ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates -U
-export CONF_BROKER_KRB_SERVICE_NAME=HTTP/$hostName
-export CONF_BROKER_KRB_AUTH_REALMS=AR4K.NET
+# aggancio al dominio kerberos
+if [ "$ipapassword" != "" ]
+then
+	ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates -U
+	export CONF_BROKER_KRB_SERVICE_NAME=HTTP/$hostName
+	export CONF_BROKER_KRB_AUTH_REALMS=AR4K.NET
+fi
 
 echo "Inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" >> $console
 echo >> $console
