@@ -314,6 +314,7 @@ telnet
 rubygem-openshift-origin-auth-kerberos
 ipa-client
 c-ares-1.7.0-6.el6
+pam_mkhomedir.so
 LISTAPOST
 
 #MariaDB-server

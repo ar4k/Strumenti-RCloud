@@ -72,5 +72,10 @@ in EC2, su una macchina adeguata (ami-230b1b57):
 
 bash <(curl -sL http://go.rossonet.net/ec2) http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml master.nodi.ar4k.net
 
+Per connessione IPA e creazione directory:
+
+authconfig --enablemkhomedir --update
+/etc/init.d/sssd start
+
 
 MOLTI FILE SONO IN CACHE NELLE DIR RPM,JAR E TGZ se dovessero sparire dalla rete.
