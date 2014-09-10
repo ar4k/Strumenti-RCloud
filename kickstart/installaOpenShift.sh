@@ -327,7 +327,7 @@ echo >> $console
 echo "----------------" >> $console
 tail -F /tmp/openshift-deploy.log >> $console &
 ./installazione_OpenShift.sh -w origin_deploy -c configurazione_OpenShift.yml --force > installazione_OpenShift.log
-killall tail
+killall tail &> /dev/null
 echo "Fine del processo di installazione" >> $console
 
 cd $dir_installazione
