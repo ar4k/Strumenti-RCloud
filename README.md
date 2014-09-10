@@ -69,7 +69,7 @@ Redirect /interno http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/inte
 
 in EC2, su una macchina adeguata:
 
-bash <(curl -s http://installa.rossonet.net/ec2)
+bash <(curl -sL http://go.rossonet.net/ec2)
 
 
 MOLTI FILE SONO IN CACHE NELLE DIR RPM,JAR E TGZ se dovessero sparire dalla rete.
