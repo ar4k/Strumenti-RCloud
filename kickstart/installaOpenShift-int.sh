@@ -299,6 +299,8 @@ php-xml
 php54-php-mbstring
 rubygem-rdoc
 telnet
+rubygem-openshift-origin-auth-kerberos
+ipa-client
 LISTAPOST
 
 #MariaDB-server
