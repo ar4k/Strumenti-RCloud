@@ -67,4 +67,9 @@ Redirect /esterno http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/go.k
 Redirect /interno http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/internal.ks
 </VirtualHost>
 
+in EC2, su una macchina adeguata:
+
+bash <(curl -s http://installa.rossonet.net/ec2)
+
+
 MOLTI FILE SONO IN CACHE NELLE DIR RPM,JAR E TGZ se dovessero sparire dalla rete.
