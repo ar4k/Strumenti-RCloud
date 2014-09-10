@@ -22,7 +22,7 @@ Per installare un nuovo host OpenShift su EC2
 
 3. Avviare la macchina amazon con i parametro in user metadata
 
-	<file di configurazione openshift>;<nome host>
+	<file di configurazione openshift>;<nome host>;<pass roll kerberos>
 
 per esempio:
 
@@ -70,7 +70,7 @@ Redirect /interno http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/inte
 
 in EC2, su una macchina adeguata (ami-230b1b57):
 
-bash <(curl -sL http://go.rossonet.net/ec2) http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml master.nodi.ar4k.net
+bash <(curl -sL http://go.rossonet.net/ec2) http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml master.nodi.ar4k.net <pass roll kerberos>
 
 Per connessione IPA e creazione directory:
 ipa-client-install --domain=ar4k.net -w <password on shot> --mkhomedir --enable-dns-updates -U
