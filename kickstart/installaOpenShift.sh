@@ -55,12 +55,14 @@
 #hostName="go.nodi.ar4k.net"
 confUrl=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f1)
 hostName=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f2)
+ipapassword=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f3)
 # eventuali parametri di configurazione vanno inseriti in /root/go.conf
 # per i virtualizzatori con CDROM come parametro 
 if [ -f /root/go.conf ]
 then
 	confUrl=$(cat /root/go.conf | cut -d\; -f1)
 	hostName=$(cat /root/go.conf | cut -d\; -f2)
+	ipapassword=$(cat /root/go.conf | cut -d\; -f3)
 fi
 
 # Per passare i parametri da linea di comando
@@ -68,6 +70,7 @@ if [ "$2" != "" ]
 then
 	confUrl=$1
         hostName=$2
+	ipapassword=$3
 fi
 
 #console="/dev/hvc0"
@@ -296,6 +299,10 @@ openshift-origin-cartridge-postgresql
 openshift-origin-cartridge-python
 openshift-origin-cartridge-ruby
 openshift-origin-cartridge-switchyard
+ipa-client
+c-ares-1.7.0-6.el6
+mod_auth_kerb
+pam_mkhomedir.so
 LISTA
 
 cat > $dir_installazione/lista_software_post.txt << LISTAPOST
@@ -312,9 +319,6 @@ php54-php-mbstring
 rubygem-rdoc
 telnet
 rubygem-openshift-origin-auth-kerberos
-ipa-client
-c-ares-1.7.0-6.el6
-pam_mkhomedir.so
 LISTAPOST
 
 #MariaDB-server
@@ -331,6 +335,10 @@ done
 yum update -y
 
 cd $dir_installazione
+
+ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates -U
+export CONF_BROKER_KRB_SERVICE_NAME=HTTP/$hostName
+export CONF_BROKER_KRB_AUTH_REALMS=AR4K.NET
 
 echo "Inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" >> $console
 echo >> $console
