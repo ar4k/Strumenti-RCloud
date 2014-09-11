@@ -86,7 +86,7 @@ echo
 
 ########################################################################
 
-echo "http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/bottegaio.yml;master.nodi.lachimera.net" > /root/go.conf
+echo "$CONF_OO_CONFIG;$CONF_OO_HOST;$CONF_OO_OTP;$CONF_OO_NAT" > /root/go.conf
 
 ########################################################################
 
@@ -97,7 +97,7 @@ cd /root
 wget http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
 chmod +x installaOpenShift.sh
 tail -F debug.log > /dev/tty1 &
-/root/installaOpenShift.sh $CONF_OO_CONFIG $CONF_OO_HOST $CONF_OO_OTP $CONF_OO_NAT
+/root/installaOpenShift.sh
 killall tail &> /dev/null
 
 ROSSONET_POST
