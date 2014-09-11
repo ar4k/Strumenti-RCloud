@@ -28,7 +28,7 @@ dove:
 
 La seguente linea di comando, data su un sistema host con KVM o XEN e virt-manager installato, crea una macchina virtuale con la configurazione del dominio lachimera.net (tra parentesi quadre le opzioni facoltative):
 
-virt-install -n <nome macchina virtuale> -r 1600 --vcpus=1 --os-variant=rhel6 [--paravirt] -w bridge:xenbr0 --disk path=/mnt/rossonet.img,size=16 -l http://mirror.centos.org/centos/6.5/os/x86_64/ -x "ks=http://go.rossonet.net/ks oo_config=http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml oo_host=master.nodi.lachimera.net [oo_otp=xxxxxx oo_nat=1 proxy=http://utente:xxxxxxxx@proxyvip.adn.intra:8080 ip=10.10.21.76 netmask=255.255.255.240 dns=10.10.21.1 gateway=10.10.21.100]" --os-type=linux
+virt-install -n <nome macchina virtuale> -r 1600 --vcpus=1 --os-variant=rhel6 -w bridge:virbr0 --disk path=/mnt/rossonet.img,size=16 -l http://mirror.centos.org/centos/6.5/os/x86_64/ -x "ks=http://go.rossonet.net/ks oo_config=http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml oo_host=master.nodi.lachimera.net [oo_otp=xxxxxx oo_nat=1 proxy=http://utente:xxxxxxxx@proxyvip.adn.intra:8080 ip=10.10.21.76 netmask=255.255.255.240 dns=10.10.21.1 gateway=10.10.21.100]" --os-type=linux [--paravirt]
 
 - l'opzione --paravirt funziona solo su macchine xen
 
