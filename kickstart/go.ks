@@ -40,7 +40,7 @@ volgroup vg_vm1 --pesize=4096 pv.253002
 logvol / --fstype=ext4 --name=lv_root --vgname=vg_vm1 --grow --size=8192 --maxsize=51200
 # versione con disco criptato
 # logvol / --fstype=ext4 --name=lv_root --vgname=vg_vm1 --grow --size=8192 --maxsize=51200 --encrypted
-logvol swap --name=lv_swap --vgname=vg_vm1 --grow --size=1024 --maxsize=2048
+logvol swap --name=lv_swap --vgname=vg_vm1 --grow --size=2048 --maxsize=2048
 
 # versione con installazione da vnc
 # vnc
