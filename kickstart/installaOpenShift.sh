@@ -402,6 +402,7 @@ DEMO
 chmod +x demo.sh
 
 cat > ar4k.sh << AR4KSH
+kinit -kt /etc/krb5.keytab host/master.nodi.ar4k.net
 ipa service-add HTTP/${hostName} --force
 ipa-getkeytab -s ipa.ar4k.net -k /etc/httpd/conf/krb5.keytab -p HTTP/${hostName}
 chown apache /etc/httpd/conf/krb5.keytab
@@ -426,6 +427,7 @@ sed -i "s/www.example.com/${hostName}/" /var/www/openshift/console/httpd/conf.d/
 /etc/init.d/openshift-console restart
 AR4KSH
 chmod +x ar4k.sh
+./ar4k.sh >> $console
 
 
 cd $dir_installazione
