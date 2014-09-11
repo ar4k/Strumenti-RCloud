@@ -6,9 +6,9 @@ Progetto di laboratorio per implementare AR4K Go
 by Ambrosini (Rossonet s.c.a r.l.)
 
 Esempi parametri di configurazione per test:
-http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/bottegaio.yml;master.nodi.bottegaio.net;<password otp>
-http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net;<password otp>
-http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml;master.nodi.ar4k.net;<password otp>
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/bottegaio.yml;master.nodi.bottegaio.net;<password otp>;0
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net;<password otp>;1
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml;master.nodi.ar4k.net;<password otp>;1
 
 Per installare da kickstart CentOS 6.x su architettura x86_64 utilizzare un media di installazione valido (http://isoredirect.centos.org/centos/6/isos/x86_64/ o, per PXE ecc..., leggere https://www.centos.org/docs/5/html/5.2/Installation_Guide/ )
 
@@ -50,6 +50,6 @@ bash <(curl -sL http://go.rossonet.net/installa) <file configurazione OO> <nome 
 - Per il significato dei parametri vedere sopra
 
 è possibile passare i parametri anche aggiungendo un file /root/go.conf con i quattro valori in un'unica riga divisi dal carattere ";". Per esempio:
-http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net;xxxxxxx
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net;xxxxxxx;1
 
 la stessa modalità di scrivere i parametri è valida in AWS EC2 per passare i parametri alla macchina dall'esterno. Usare il campo USER DATA in formato stringa. 

@@ -56,6 +56,7 @@
 confUrl=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f1)
 hostName=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f2)
 ipapassword=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f3)
+oonat=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f4)
 # eventuali parametri di configurazione vanno inseriti in /root/go.conf
 # per i virtualizzatori con CDROM come parametro 
 if [ -f /root/go.conf ]
@@ -63,6 +64,7 @@ then
 	confUrl=$(cat /root/go.conf | cut -d\; -f1)
 	hostName=$(cat /root/go.conf | cut -d\; -f2)
 	ipapassword=$(cat /root/go.conf | cut -d\; -f3)
+	oonat=$(cat /root/go.conf | cut -d\; -f4)
 fi
 
 # Per passare i parametri da linea di comando
@@ -71,6 +73,7 @@ then
 	confUrl=$1
         hostName=$2
 	ipapassword=$3
+	oonat=$4
 fi
 
 #console="/dev/hvc0"
@@ -180,7 +183,7 @@ echo "Scarico i file di configurazione e installazione di OpenShift" >> $console
 cd $dir_installazione
 curl -s $confUrl -o configurazione_OpenShift.yml
 # corregge l'ip pubblico configurazione_OpenShift.yml
-if [ $4 -eq 1 ]
+if [ $oonat -eq 1 ]
 then
 	sed -i "s/<PUB_IP>/${pub_ip_addr}/g" configurazione_OpenShift.yml
 else
@@ -426,7 +429,7 @@ chmod +x ar4k.sh
 cd $dir_installazione
 
 # Corregge il dns
-if [ $4 -eq 1 ]
+if [ $oonat -eq 1 ]
 then
 	sed -i "s/${cur_ip_addr}/${pub_ip_addr}/" /var/named/dynamic/*.db
 	service named restart
