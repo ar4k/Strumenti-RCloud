@@ -349,9 +349,11 @@ cd $dir_installazione
 # aggancio al dominio kerberos
 if [ "$ipapassword" != "" ]
 then
-	ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates -U
+	ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates -U -d &>>$console 
 	export bind_krb_principal=HTTP/$hostName
 	export bind_krb_keytab=/etc/krb5.keytab
+else
+	echo "Password non trovata, non accedo al dominio AR4K.NET" >>$console
 fi
 
 echo "Inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" >> $console
@@ -400,7 +402,7 @@ DEMO
 chmod +x demo.sh
 
 cat > ar4k.sh << AR4KSH
-ipa service-add HTTP/${hostName}
+ipa service-add HTTP/${hostName} --force
 ipa-getkeytab -s ipa.ar4k.net -k /etc/httpd/conf/krb5.keytab -p HTTP/${hostName}
 chown apache /etc/httpd/conf/krb5.keytab
 chmod 660 /etc/httpd/conf/krb5.keytab
