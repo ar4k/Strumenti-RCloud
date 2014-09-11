@@ -47,6 +47,9 @@ Per installare da console, da utente root, su una adeguata macchina CentOS 6.x x
 
 bash <(curl -sL http://go.rossonet.net/installa) <file configurazione OO> <nome host da creare> <password otp> <opzione nat>
 
+Per esempio:
+bash <(curl -sL http://go.rossonet.net/installa) http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml master.nodi.ar4k.net password 1
+
 - Per il significato dei parametri vedere sopra
 
 è possibile passare i parametri anche aggiungendo un file /root/go.conf con i quattro valori in un'unica riga divisi dal carattere ";". Per esempio:
