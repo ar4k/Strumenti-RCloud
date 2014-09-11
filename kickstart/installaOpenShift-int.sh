@@ -122,7 +122,8 @@ yum install -y @server-policy ntp ntpdate git man sudo strace vim-enhanced wget 
 cd $dir_installazione
 
 echo "Setto timezone Roma"
-cp -f /usr/share/zoneinfo/Europe/Rome /etc/localtime
+rm -f /etc/localtime
+cp /usr/share/zoneinfo/Europe/Rome /etc/localtime
 
 echo "Installo la JDK" >> $console
 wget http://marx.rossonet.net/ar4k/jdk-7u67-linux-x64.rpm
@@ -300,6 +301,7 @@ openshift-origin-cartridge-python
 openshift-origin-cartridge-ruby
 openshift-origin-cartridge-switchyard
 ipa-client
+ipa-admintools
 c-ares-1.7.0-6.el6
 mod_auth_kerb
 pam_mkhomedir.so
@@ -340,8 +342,8 @@ cd $dir_installazione
 if [ "$ipapassword" != "" ]
 then
 	ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates -U
-	export CONF_BROKER_KRB_SERVICE_NAME=HTTP/$hostName
-	export CONF_BROKER_KRB_AUTH_REALMS=AR4K.NET
+	export bind_krb_principal=HTTP/$hostName
+	export bind_krb_keytab=/etc/krb5.keytab
 fi
 
 echo "Inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" >> $console

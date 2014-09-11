@@ -122,7 +122,8 @@ yum install -y @server-policy ntp ntpdate git man sudo strace vim-enhanced wget 
 cd $dir_installazione
 
 echo "Setto timezone Roma"
-cp -f /usr/share/zoneinfo/Europe/Rome /etc/localtime
+rm -f /etc/localtime
+cp /usr/share/zoneinfo/Europe/Rome /etc/localtime
 
 echo "Installo la JDK" >> $console
 wget http://marx.rossonet.net/ar4k/jdk-7u67-linux-x64.rpm
@@ -179,7 +180,12 @@ echo "Scarico i file di configurazione e installazione di OpenShift" >> $console
 cd $dir_installazione
 curl -s $confUrl -o configurazione_OpenShift.yml
 # corregge l'ip pubblico configurazione_OpenShift.yml
-sed -i "s/<PUB_IP>/${pub_ip_addr}/g" configurazione_OpenShift.yml
+if [ $4 -eq 1 ]
+then
+	sed -i "s/<PUB_IP>/${pub_ip_addr}/g" configurazione_OpenShift.yml
+else
+	sed -i "s/<PUB_IP>/${cur_ip_addr}/g" configurazione_OpenShift.yml
+fi
 sed -i "s/<PRI_IP>/${cur_ip_addr}/g" configurazione_OpenShift.yml
 # assegna la password
 sed -i "s/<PASSWORD>/${password}/g" configurazione_OpenShift.yml
@@ -300,6 +306,7 @@ openshift-origin-cartridge-python
 openshift-origin-cartridge-ruby
 openshift-origin-cartridge-switchyard
 ipa-client
+ipa-admintools
 c-ares-1.7.0-6.el6
 mod_auth_kerb
 pam_mkhomedir.so
@@ -340,8 +347,8 @@ cd $dir_installazione
 if [ "$ipapassword" != "" ]
 then
 	ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates -U
-	export CONF_BROKER_KRB_SERVICE_NAME=HTTP/$hostName
-	export CONF_BROKER_KRB_AUTH_REALMS=AR4K.NET
+	export bind_krb_principal=HTTP/$hostName
+	export bind_krb_keytab=/etc/krb5.keytab
 fi
 
 echo "Inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" >> $console
@@ -389,11 +396,41 @@ rhc app-create testzabbix -s http://zabbix-agrimm.rhcloud.com/build/manifest/mas
 DEMO
 chmod +x demo.sh
 
+cat > ar4k.sh << AR4KSH
+ipa service-add HTTP/${hostName}
+ipa-getkeytab -s ipa.ar4k.net -k /etc/httpd/conf/krb5.keytab -p HTTP/${hostName}
+chown apache /etc/httpd/conf/krb5.keytab
+chmod 660 /etc/httpd/conf/krb5.keytab
+
+ln -s /etc/httpd/conf/krb5.keytab /var/www/openshift/broker/httpd/conf.d/http.keytab
+ln -s /etc/httpd/conf/krb5.keytab /var/www/openshift/console/httpd/conf.d/http.keytab
+
+cp /var/www/openshift/broker/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf.sample /var/www/openshift/broker/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf
+cp /var/www/openshift/console/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf.sample /var/www/openshift/console/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf
+
+rm /var/www/openshift/broker/httpd/conf.d/openshift-origin-auth-remote-user-basic.conf
+rm /var/www/openshift/console/httpd/conf.d/openshift-origin-auth-remote-user-basic.conf
+
+sed -i "s/EXAMPLE.COM/AR4K.NET/" /var/www/openshift/broker/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf
+sed -i "s/EXAMPLE.COM/AR4K.NET/" /var/www/openshift/console/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf
+
+sed -i "s/www.example.com/${hostName}/" /var/www/openshift/broker/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf
+sed -i "s/www.example.com/${hostName}/" /var/www/openshift/console/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf
+
+/etc/init.d/openshift-broker restart
+/etc/init.d/openshift-console restart
+AR4KSH
+chmod +x ar4k.sh
+
+
 cd $dir_installazione
 
 # Corregge il dns
-sed -i "s/${cur_ip_addr}/${pub_ip_addr}/" /var/named/dynamic/*.db
-service named restart
+if [ $4 -eq 1 ]
+then
+	sed -i "s/${cur_ip_addr}/${pub_ip_addr}/" /var/named/dynamic/*.db
+	service named restart
+fi
 
 cat > /etc/cgconfig.conf << CGCONFIG
 #

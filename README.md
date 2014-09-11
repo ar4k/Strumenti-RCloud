@@ -5,75 +5,51 @@ Script e template per gestire la piattaforma AR4K GO
 Progetto di laboratorio per implementare AR4K Go
 by Ambrosini (Rossonet s.c.a r.l.)
 
-Per installare il pacchetto grails su OpenShift Origin:
-rhc app create <name> jbossews-2.0 mysql-5.5 --from-code=http://repo.ar4k.eu/r/boot-go.git
+Esempi parametri di configurazione per test:
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/bottegaio.yml;master.nodi.bottegaio.net;<password otp>
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net;<password otp>
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml;master.nodi.ar4k.net;<password otp>
 
-Per installare un nuovo host OpenShift su EC2
+Per installare da kickstart CentOS 6.x su architettura x86_64 utilizzare un media di installazione valido (http://isoredirect.centos.org/centos/6/isos/x86_64/ o, per PXE ecc..., leggere https://www.centos.org/docs/5/html/5.2/Installation_Guide/ )
 
-1. Configurare una macchina base (pacchetti minimi) di CentOS6 x86_64
-2. modificare /etc/rc.local aggiungendo:
+Nella finestra di boot di GRUB selezionare l'installazione grafica o testuale, premere tab e aggiungere il seguente parametro:
 
-      # Installa OpenShift
-      cd /root
-      wget http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
-      chmod +x installaOpenShift.sh
-      /root/installaOpenShift.sh
-      #
-
-3. Avviare la macchina amazon con i parametro in user metadata
-
-	<file di configurazione openshift>;<nome host>;<pass roll kerberos>
-
-per esempio:
-
-http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/bottegaio.yml;master.nodi.bottegaio.net
-http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net
-http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml;master.nodi.ar4k.net
-
-Per i nostri test usiamo l'ami: 20140821-OpenShift-Template (ami-d6ae70a1)
-
-
-Infine, per lanciare l'installazione da un KickStart di Anaconda su CentOS 6 x86_64
-inserire il seguente parametro al grub del network cd o install cd:
-
-ks=http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/go.ks
+ks=http://go.rossonet.net/ks oo_config=<file configurazione OO> oo_host=<nome host da creare> oo_otp=<password otp> oo_nat=<1>
 
 o
 
-ks=http://go.rossonet.net/interno
+ks=http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/go.ks oo_config=<file configurazione OO> oo_host=<nome host da creare> oo_otp=<password otp> oo_nat=<0/1>
 
-o
+dove:
+- oo_config è il percorso del file di configurazione di oo-install (ess. http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml)
+- oo_host è il nome host del componente che si sta creando FQDN (ess. master.nodi.lachimera.net)
+- oo_otp se presente prova la connessione alla piattaforma AR4K utilizzando la password temporanea (otp=one time password ; ess. F5ght4e)
+- oo_nat se presente e se settato a uno permette la configurazione di macchine con indirizzo ip pubblico diverso dall'ip della scheda. Alcuni casi: macchine in AWS EC2 o in rete FastWeb con il nat. (ess. 1)  
 
-ks=http://go.rossonet.net/esterno
+La seguente linea di comando, data su un sistema host con KVM o XEN e virt-manager installato, crea una macchina virtuale con la configurazione del dominio lachimera.net (tra parentesi quadre le opzioni facoltative):
 
-
-
-Per creare una macchina virtuale XEN o KVM:
-
-virt-install -n <nome macchina virtuale> -r 1600 --vcpus=1 --os-variant=rhel6 --paravirt -w bridge:xenbr0 --disk path=/opt/images/rossonet.img,size=16 -l http://mirror.centos.org/centos/6.5/os/x86_64/ -x "ks=http://go.rossonet.net/interno proxy=http://andrea.ambrosini:xxxxxxxx@proxyvip.adn.intra:8080 ip=10.10.21.76 netmask=255.255.255.240 dns=10.10.21.1 gateway=10.10.21.100" --os-type=linux
+virt-install -n <nome macchina virtuale> -r 1600 --vcpus=1 --os-variant=rhel6 [--paravirt] -w bridge:xenbr0 --disk path=/mnt/rossonet.img,size=16 -l http://mirror.centos.org/centos/6.5/os/x86_64/ -x "ks=http://go.rossonet.net/interno oo_config=http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml oo_host=master.nodi.lachimera.net [oo_otp=xxxxxx proxy=http://utente:xxxxxxxx@proxyvip.adn.intra:8080 ip=10.10.21.76 netmask=255.255.255.240 dns=10.10.21.1 gateway=10.10.21.100]" --os-type=linux
 
 - l'opzione --paravirt funziona solo su macchine xen
 
-il video demo è realizzato con questo comando su macchina locale:
-
-virt-install -n openshift --ram 2048 --vcpus=1 --os-variant=rhel6 -w network:default --disk path=/mnt/rossonet.img,size=16 -l http://mirror.centos.org/centos/6.5/os/x86_64/ -x "ks=http://go.rossonet.net/interno proxy=http://localhost:3128" --os-type=linux
-
-
-Il relativo file di configurazione di Apache
-
+Il relativo file di configurazione di Apache che risponde a go.rossonet.net:
+################################################################
 <VirtualHost *:80>
 DocumentRoot /var/www/html
 ServerName go.rossonet.net
-Redirect /esterno http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/go.ks
-Redirect /interno http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/internal.ks
+Redirect /ks http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/go.ks
+Redirect /installa  http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
 </VirtualHost>
+################################################################
 
-in EC2, su una macchina adeguata (ami-230b1b57):
 
-bash <(curl -sL http://go.rossonet.net/ec2) http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/ar4k.yml master.nodi.ar4k.net <pass roll kerberos>
+Per installare da console, da utente root, su una adeguata macchina CentOS 6.x x86_64 con un'installazione minima utilizzare il comando sotto; in EC2 usare l'ami ami-230b1b57, entrare in root con la chive pem gestita con AWS EC2 e digitare: 
 
-Per connessione IPA e creazione directory:
-ipa-client-install --domain=ar4k.net -w <password on shot> --mkhomedir --enable-dns-updates -U
-( con opzione -d per il debug )
+bash <(curl -sL http://go.rossonet.net/installa) <file configurazione OO> <nome host da creare> <password otp> <opzione nat>
 
-MOLTI FILE SONO IN CACHE NELLE DIR RPM,JAR E TGZ se dovessero sparire dalla rete.
+- Per il significato dei parametri vedere sopra
+
+è possibile passare i parametri anche aggiungendo un file /root/go.conf con i quattro valori in un'unica riga divisi dal carattere ";". Per esempio:
+http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net;xxxxxxx
+
+la stessa modalità di scrivere i parametri è valida in AWS EC2 per passare i parametri alla macchina dall'esterno. Usare il campo USER DATA in formato stringa. 
