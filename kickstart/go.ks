@@ -98,10 +98,13 @@ echo "$oo_config;$oo_host;$oo_otp;$oo_nat" > /root/go.conf
 
 cat >> /etc/rc.local << ROSSONET_POST
 
-#Post installazione AR4K
+# Post installazione AR4K
 cd /root
 wget http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
 chmod +x installaOpenShift.sh
+# Lo script genera di default il file /root/debug.log
+# a secondo del tipo di installazione potrebbe essere necessario indirizzare l'output
+# verso un'altra console
 tail -F debug.log > /dev/tty1 &
 /root/installaOpenShift.sh
 killall tail &> /dev/null
