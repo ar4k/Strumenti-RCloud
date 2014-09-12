@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script di completamento della configurazione OpenShift
+# script di completamento della configurazione OpenShift
 # by Ambrosini (Rossonet s.c.a r.l.)
 # 
 # da copiare in /root/ di un AMI EC2 con installazione CentOS 6.x x86_64
@@ -8,57 +8,21 @@
 # tra i pacchetti
 # con i386 NON FUNZIONA
 #
-# Per installare lo script utilizare il seguente codice in /etc/rc.local
+# per installare lo script utilizare il seguente codice in /etc/rc.local
 
-#	#!/bin/sh
-#	#
-#	# This script will be executed *after* all the other init scripts.
-#	# You can put your own initialization stuff in here if you don't
-#	# want to do the full Sys V style init stuff.
-#	
-#	touch /var/lock/subsys/local
-#	
-#	# set a random pass on first boot
-#	if [ -f /root/firstrun ]; then
-#	  dd if=/dev/urandom count=50|md5sum|passwd --stdin root
-#	  passwd -l root
-#	  # Installa OpenShift
-#	  cd /root
-#	  wget http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
-#	  chmod +x installaOpenShift.sh
-#	  /root/installaOpenShift.sh
-#	  #
-#	  rm /root/firstrun
-#	fi
-#	
-#	if [ ! -d /root/.ssh ]; then
-#	  mkdir -m 0700 -p /root/.ssh
-#	  restorecon /root/.ssh
-#	fi
-#	# Get the root ssh key setup
-#	ReTry=0
-#	while [ ! -f /root/.ssh/authorized_keys ] && [ $ReTry -lt 5 ]; do
-#	  sleep 2
-#	  curl -f http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key > /root/.ssh/authorized_keys
-#	  ReTry=$[Retry+1]
-#	done
-#	chmod 600 /root/.ssh/authorized_keys && restorecon /root/.ssh/authorized_keys
-#	
-#	
+# per dettagli guardare il file README.md allegato al progetto.
 
-# Il file /root/firstrun permette il cambio della password al prossimo riavvio e poi si cancella
-# Il disco deve essere almeno di 10GB
-
-
-# Leggo il parametro EC2 della configurazione
-#confUrl="http://rossonet.rossonet.net/indefero/index.php/p/go/source/file/master/CentOS6/ar4k.yml"
-#hostName="go.nodi.ar4k.net"
+# leggo il parametro AWS EC2 della configurazione
+# i parametri sono inseriti in fase di creazione della macchina nel campo
+# user data
 confUrl=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f1)
 hostName=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f2)
 ipapassword=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f3)
 oonat=$(curl http://169.254.169.254/latest/user-data -o - | head -1 | grep -v '<?xml version="1.0" encoding="iso-8859-1"?>' | cut -d\; -f4)
+
 # eventuali parametri di configurazione vanno inseriti in /root/go.conf
-# per i virtualizzatori con CDROM come parametro 
+# per i virtualizzatori con passaggio dati via CDROM creare un link
+# simbolico durante la post installazione in ks 
 if [ -f /root/go.conf ]
 then
 	confUrl=$(cat /root/go.conf | cut -d\; -f1)
@@ -67,42 +31,57 @@ then
 	oonat=$(cat /root/go.conf | cut -d\; -f4)
 fi
 
-# Per passare i parametri da linea di comando
+# infine se lo script viene lanciato con parametri
+# questi prevalgono.
+# per passare i parametri da linea di comando
+# da linea di comando è possibile passare anche il parametro
+# autoconfig.
+# se impostato, immediatamente dopo la connessione al REALM
+# AR4K.NET, lo script prova a recuperare da kerberos i valori
+# di confUrl e oonat. hostName e ipapassword sono necessari.
 if [ "$2" != "" ]
 then
 	confUrl=$1
         hostName=$2
 	ipapassword=$3
 	oonat=$4
+	autoconfig=$5
 fi
 
-#console="/dev/hvc0"
+# definisce i percorsi base
 console="/root/debug.log"
 dir_installazione="/root/openshift"
 
-# Marca le macchine già installate
+# marca le macchine già installate
+# la presenza di un file /root/ar4k.mark
+# blocca la riesecuzione dello script.
+# all'avvio viene generato con il timestamp
+# locale. (prima della sincronizzazione NTP...)
 if [ -f /root/ar4k.mark ]
 then
 	echo "sistema installato precedentemente... esco." >> $console
 	exit 0
 else
-	touch /root/ar4k.mark
+	date > /root/ar4k.mark
 fi
 
-# Se le variabili non sono specificate lo script esce
+# se le variabili non sono specificate lo script esce
+# per passare il parametro autoconf bisogna fornire un
+# valore non nullo a confUrl, mentre hostname è reale
 if [ "$confUrl" == "" ]
 then
-	echo "Parametro url file di configurazione mancante" >> $console
+	echo "parametro url file di configurazione mancante" >> $console
 	exit 1
 fi
 if [ "$hostName" == "" ]
 then
-	echo "Parametro url file di configurazione mancante" >> $console
+	echo "parametro url file di configurazione mancante" >> $console
 	exit 1
 fi
 
-# Crea la directory
+# crea la directory di lavoro
 mkdir -p $dir_installazione
+cd $dir_installazione
 	
 ########################################################################
 
@@ -119,18 +98,18 @@ ROSSONET_WELCOME
 
 ########################################################################
 
-echo "Installo i pacchetti base mancanti" >> $console
+echo "installo i pacchetti base mancanti" >> $console
 yum install -y @server-policy ntp ntpdate git man sudo strace vim-enhanced wget curl @development bind java-devel openssl ruby bc java-1.7.0-openjdk java-1.7.0-openjdk-devel &>> $dir_installazione/yum.log
 
-cd $dir_installazione
-
-echo "Setto timezone Roma"
+echo "setto timezone Roma"
 rm -f /etc/localtime
 cp /usr/share/zoneinfo/Europe/Rome /etc/localtime
 
-echo "Installo la JDK" >> $console
+echo "installo la JDK" >> $console
 wget http://marx.rossonet.net/ar4k/jdk-7u67-linux-x64.rpm
 yum localinstall -y  jdk-7u67-linux-x64.rpm &>> $dir_installazione/yum.log
+
+# la configurazione completa ORACLE prevede le righe seguenti
 ## java ##
 #alternatives --install /usr/bin/java java /usr/java/latest/jre/bin/java 200000
 ## javaws ##
@@ -139,14 +118,14 @@ yum localinstall -y  jdk-7u67-linux-x64.rpm &>> $dir_installazione/yum.log
 #alternatives --install /usr/bin/javac javac /usr/java/latest/bin/javac 200000
 #alternatives --install /usr/bin/jar jar /usr/java/latest/bin/jar 200000
 
-# "Synchronize the system clock using NTP..."
-echo "Sincronizza l'orologio del sistema..." >> $console
-ntpdate clock.redhat.com
-# "Synchronize the hardware clock to the system clock..."
+# synchronize the system clock using NTP...
+echo "sincronizza l'orologio del sistema..." >> $console
+ntpdate ipa.ar4k.net
+# synchronize the hardware clock to the system clock...
 hwclock --systohc
 
 # Se la partizione è più grande, espande il filesystem
-resize2fs /dev/xvde
+resize2fs /
 
 # Setta quota in filesystem di root
 sed -i 's/\(^.*\t\/ .*\)defaults\(.*$\)/\1defaults,usrquota\2/' /etc/fstab
@@ -154,68 +133,50 @@ mount -o remount /
 quotacheck -f -cmug /
 
 # Grab the IP address set during installation.
-echo "Identifico la rete..." >> $console
+echo "identifico la rete..." >> $console
 cur_ip_addr="$(/sbin/ip addr show | awk '/inet .*global/ { split($2,a,"/"); print a[1]; }' | head -1)"
-pub_ip_addr="$(curl rossonet.rossonet.net/myip.php 2> /dev/null | grep 'Current IP Address: ' | sed 's/Current IP Address: //')"
+# utilizza un semplice script PHP per avere l'indirizzo pubblico chiamante
+pub_ip_addr="$(curl http://rossonet.rossonet.net/myip.php 2> /dev/null | grep 'Current IP Address: ' | sed 's/Current IP Address: //')"
 echo "ip privato:" >> $console
 echo $cur_ip_addr >> $console
 echo "ip pubblico:" >> $console
 echo $pub_ip_addr >> $console
 # add the IP to /etc/issue for convenience
-echo "IP interfaccia durante l'installazione: ${cur_ip_addr} (${pub_ip_addr})" >> /etc/issue.net
+echo "ip interfacce durante l'installazione: ${cur_ip_addr} (${pub_ip_addr})" >> /etc/issue.net
 
 
 # genera una chiave di installazione
 echo "$(openssl rand -hex 3)" > $dir_installazione/chiave.txt
-echo "Codice sicurezza AR4K:" >> /etc/issue.net
-cat $dir_installazione/chiave.txt >> /etc/issue.net
+echo "codice sicurezza AR4K:" >> /etc/motd
+cat $dir_installazione/chiave.txt >> /etc/motd
+echo "password OpenShift:" >> /etc/motd
+echo "$dir_installazione/OpenShift.pwd" >> /etc/motd
 # genera la password per OpenShift
 echo "$(openssl rand -base64 8 | tr -dc _A-Z-a-z-0-9)" > $dir_installazione/OpenShift.pwd
 password=$(cat $dir_installazione/OpenShift.pwd)
-echo "Codice di sicurezza AR4K:" >> $console
+echo "codice di sicurezza AR4K:" >> $console
 cat $dir_installazione/chiave.txt >> $console
-echo "Password OpenShift:" >> $console
+echo "password OpenShift:" >> $console
 cat $dir_installazione/OpenShift.pwd  >> $console
 
-# "Installa OpenShift..."
-echo "Scarico i file di configurazione e installazione di OpenShift" >> $console
-
-cd $dir_installazione
-curl -s $confUrl -o configurazione_OpenShift.yml
-# corregge l'ip pubblico configurazione_OpenShift.yml
-if [ $oonat -eq 1 ]
-then
-	sed -i "s/<PUB_IP>/${pub_ip_addr}/g" configurazione_OpenShift.yml
-else
-	sed -i "s/<PUB_IP>/${cur_ip_addr}/g" configurazione_OpenShift.yml
-fi
-sed -i "s/<PRI_IP>/${cur_ip_addr}/g" configurazione_OpenShift.yml
-# assegna la password
-sed -i "s/<PASSWORD>/${password}/g" configurazione_OpenShift.yml
-curl -s https://install.openshift.com/ -o installazione_OpenShift.sh
-chmod +x installazione_OpenShift.sh
-
-# Configura l'host in /etc/hosts
+# configura l'host in /etc/hosts
 echo "${cur_ip_addr}	${hostName}" >> /etc/hosts
-# Configura hostname
+# configura hostname
 sed -i "s/^HOSTNAME=.*$/HOSTNAME=${hostName}/" /etc/sysconfig/network
 hostname ${hostName}
-# Disabilita ipv6
+# disabilita ipv6
 cat >> /etc/sysctl.conf << SYSCTL
 net.ipv6.conf.all.disable_ipv6 = 1
 net.ipv6.conf.default.disable_ipv6 = 1
 SYSCTL
 
-cd $dir_installazione
 # Scarico il tool diagnostico
 wget https://raw.githubusercontent.com/openshift/origin-server/master/common/bin/oo-diagnostics
 chmod +x oo-diagnostics
 
-cd $dir_installazione
-
 # Software utili allo sviluppo Rossonet/AR4K
 
-echo "Installo Tomcat 7" >> $console
+echo "installo Tomcat 7" >> $console
 wget http://mirror.nohup.it/apache/tomcat/tomcat-7/v7.0.55/bin/apache-tomcat-7.0.55.tar.gz
 tar -xzf apache-tomcat-7.0.55.tar.gz
 #rm -f apache-tomcat-8.0.9.tar.gz
@@ -225,7 +186,7 @@ ln -s /opt/apache-tomcat-7.0.55 /usr/share/tomcat7
 wget  http://repo.ar4k.eu/raw/strumenti-go.git/master/jar/commons-logging-tomcat-juli.jar
 cp commons-logging-tomcat-juli.jar /usr/share/tomcat7/bin/
 
-echo "Installo Maven 3" >> $console
+echo "installo Maven 3" >> $console
 wget http://apache.fastbull.org/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
 tar -xzf apache-maven-3.2.2-bin.tar.gz
 #rm -f apache-maven-3.2.2-bin.tar.gz
@@ -236,50 +197,50 @@ ln -s /opt/apache-maven-3.2.2 /usr/share/java/apache-maven-3.0.3
 echo -e 'export M2_HOME=/etc/alternatives/maven\nexport PATH=${M2_HOME}/bin:${PATH}'  > /etc/profile.d/maven.sh
 source /etc/profile.d/maven.sh
 
-echo "Installo Grails 2.4.3" >> $console
+echo "installo Grails 2.4.3" >> $console
 wget http://dist.springframework.org.s3.amazonaws.com/release/GRAILS/grails-2.4.3.zip
 unzip grails-2.4.3.zip
 #rm -f grails-2.4.3.zip
 mv grails-2.4.3 /opt/
 ln -s /opt/grails-2.4.3 /etc/alternatives/grails-2.4.3
 
-echo "Installo Grails 2.3.6" >> $console
+echo "installo Grails 2.3.6" >> $console
 wget http://dist.springframework.org.s3.amazonaws.com/release/GRAILS/grails-2.3.6.zip
 unzip grails-2.3.6.zip
 #rm -f grails-2.3.6.zip
 mv grails-2.3.6 /opt/
 ln -s /opt/grails-2.3.6 /etc/alternatives/grails-2.3.6
 
-echo "Installo JBoss 7" >> $console
+echo "installo JBoss 7" >> $console
 wget http://download.jboss.org/jbossas/7.1/jboss-as-7.1.1.Final/jboss-as-7.1.1.Final.tar.gz
 tar -xzf jboss-as-7.1.1.Final.tar.gz
 #rm -f jboss-as-7.1.1.Final.tar.gz
 mv  jboss-as-7.1.1.Final /opt/
-
 git clone  https://github.com/openshift/jboss-as7-modules.git
 cp -r jboss-as7-modules/mysql/modules/* /opt/jboss-as-7.1.1.Final/modules
 cp -r jboss-as7-modules/mongodb/modules/* /opt/jboss-as-7.1.1.Final/modules
 #rm -rf jboss-as7-modules
-
 ln -s /opt/jboss-as-7.1.1.Final /etc/alternatives/jbossas-7
 
-# Reset per i contesti SELinux
+# reset per i contesti SELinux
 restorecon -r /opt/tomcat-8.0 /opt/apache-maven-3.2.2 /opt/grails-2.4.3 /opt/jboss-as-7.1.1.Final /etc/alternatives/tomcat-8.0 /etc/alternatives/maven-3.0 /etc/alternatives/grails-2.4.3 /etc/alternatives/jbossas-7 
 
-# Installa il repository SCL
+# installa il repository SCL
 # per php54-php-pecl-memcache
 yum install -y centos-release-SCL &>> $dir_installazione/yum.log
 
-# Forza installazione delle cartucce con dipendenze JBOSS, MAVEN e TOMCAT
+# forza installazione delle cartucce con dipendenze JBOSS, MAVEN e TOMCAT
 mkdir -p $dir_installazione/rpm
 cd $dir_installazione/rpm
 #wget https://mirror.openshift.com/pub/origin-server/release/4/rhel-6/packages/x86_64/openshift-origin-cartridge-jbosseap-2.19.1.1-1.el6.noarch.rpm
 wget https://mirror.openshift.com/pub/origin-server/release/4/rhel-6/packages/x86_64/openshift-origin-cartridge-jbossas-1.26.1.1-1.el6.noarch.rpm
 wget https://mirror.openshift.com/pub/origin-server/release/4/rhel-6/packages/x86_64/openshift-origin-cartridge-jbossews-1.25.3.1-1.el6.noarch.rpm
 rpm -Uvh --nodeps openshift-origin-cartridge-jbossas-1.26.1.1-1.el6.noarch.rpm openshift-origin-cartridge-jbossews-1.25.3.1-1.el6.noarch.rpm
+cd $dir_installazione
 
-# Installa lista software
+# lista software installato prima di OpenShift
 cat > $dir_installazione/lista_software.txt << LISTA
+quota
 openshift-origin-cartridge-dependencies-optional-all
 openshift-origin-cartridge-dependencies-recommended-all
 ruby193-ruby-devel
@@ -315,6 +276,7 @@ mod_auth_kerb
 pam_mkhomedir.so
 LISTA
 
+# lista software installato dopo OpenShift
 cat > $dir_installazione/lista_software_post.txt << LISTAPOST
 php54-php-mysqlnd
 php54-php-gd
@@ -331,20 +293,18 @@ telnet
 rubygem-openshift-origin-auth-kerberos
 LISTAPOST
 
+# esclusi per conflitto tra MariaDB-common-5.5.39-1.i386 e mysql-libs-5.1.73-3.el6_5.x86_64
 #MariaDB-server
 #MariaDB-devel
 #openshift-origin-cartridge-mariadb
-# esclusi per conflitto tra MariaDB-common-5.5.39-1.i386 e mysql-libs-5.1.73-3.el6_5.x86_64
 
-echo "Installa tutte le dipendenze e aggiorna il sistema" >> $console
+echo "installo tutte le dipendenze e aggiorna il sistema" >> $console
 for pack in $( cat $dir_installazione/lista_software.txt )
 do 
    yum install -y --skip-broken $pack &>> $dir_installazione/yum.log
 done
 
 yum update -y
-
-cd $dir_installazione
 
 # aggancio al dominio kerberos
 if [ "$ipapassword" != "" ]
@@ -353,20 +313,46 @@ then
 	export bind_krb_principal=HTTP/$hostName
 	export bind_krb_keytab=/etc/krb5.keytab
 else
-	echo "Password non trovata, non accedo al dominio AR4K.NET" >>$console
+	echo "password non trovata, non accedo al dominio AR4K.NET" >>$console
 fi
 
-echo "Inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" >> $console
+##############################################################
+##############################################################
+
+# inserire il recupero della variabile $confUrl e $oonat
+# in futuro potranno essere presenti più parametri di 
+# configurazione 
+
+##############################################################
+##############################################################
+
+# installa OpenShift...
+echo "scarico i file di configurazione e installazione di OpenShift" >> $console
+curl -s $confUrl -o configurazione_OpenShift.yml
+# corregge l'ip pubblico configurazione_OpenShift.yml con o senza nat
+if [ $oonat -eq 1 ]
+then
+	sed -i "s/<PUB_IP>/${pub_ip_addr}/g" configurazione_OpenShift.yml
+else
+	sed -i "s/<PUB_IP>/${cur_ip_addr}/g" configurazione_OpenShift.yml
+fi
+# carica l'ip privato
+sed -i "s/<PRI_IP>/${cur_ip_addr}/g" configurazione_OpenShift.yml
+# assegna la password
+sed -i "s/<PASSWORD>/${password}/g" configurazione_OpenShift.yml
+curl -s https://install.openshift.com/ -o installazione_OpenShift.sh
+chmod +x installazione_OpenShift.sh
+
+echo "inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" >> $console
 echo >> $console
 echo "----------------" >> $console
 tail -F /tmp/openshift-deploy.log >> $console &
 ./installazione_OpenShift.sh -w origin_deploy -c configurazione_OpenShift.yml --force > installazione_OpenShift.log
-killall tail &> /dev/null
-echo "Fine del processo di installazione" >> $console
-
+echo "fine del processo di installazione" >> $console
 cd $dir_installazione
 
-echo "Creo il file per installazione demo" >> $console
+# da modificare...
+#echo "creo il file per installazione demo" >> $console
 cat > demo.sh << DEMO
 #!/bin/bash
 # installa pacchetti basi trovati in internet
@@ -401,6 +387,7 @@ rhc app-create testzabbix -s http://zabbix-agrimm.rhcloud.com/build/manifest/mas
 DEMO
 chmod +x demo.sh
 
+# per aggangiare OpenShift a Kerberos
 cat > ar4k.sh << AR4KSH
 kinit -kt /etc/krb5.keytab host/master.nodi.ar4k.net
 ipa service-add HTTP/${hostName} --force
@@ -426,19 +413,21 @@ sed -i "s/www.example.com/${hostName}/" /var/www/openshift/console/httpd/conf.d/
 /etc/init.d/openshift-broker restart
 /etc/init.d/openshift-console restart
 AR4KSH
+
 chmod +x ar4k.sh
-./ar4k.sh >> $console
+if [ "$ipapassword" != "" ]
+then
+	./ar4k.sh >> $console
+fi
 
-
-cd $dir_installazione
-
-# Corregge il dns
+# corregge il dns se necessario
 if [ $oonat -eq 1 ]
 then
 	sed -i "s/${cur_ip_addr}/${pub_ip_addr}/" /var/named/dynamic/*.db
 	service named restart
 fi
 
+# corregge la configurazione seguente
 cat > /etc/cgconfig.conf << CGCONFIG
 #
 #  Copyright IBM Corporation. 2007
@@ -477,13 +466,13 @@ service cgconfig restart
 service cgred restart
 service oddjobd restart
 
-# Installa i post pack
+# installa i pacchetti RPM restanti
 for pack in $( cat $dir_installazione/lista_software_post.txt )
 do 
    yum install -y --skip-broken $pack &>> $dir_installazione/yum_post.log
 done
 
-# Patch per cartuccia Tomcat 7
+# patch per cartuccia Tomcat 7
 file1=/usr/libexec/openshift/cartridges/jbossews/bin/setup
 if [ -e $file1 ]
 then 
@@ -500,8 +489,7 @@ then
 	echo 'ln -sf ${SYSTEM_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar ${OPENSHIFT_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar' >> $file2
 fi
 
-echo "Lancio la diagnostica.." >> $console
-cd $dir_installazione
+echo "lancio la diagnostica.." >> $console
 ./oo-diagnostics &> diagnostica.log
 
 exit 0

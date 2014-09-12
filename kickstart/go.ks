@@ -63,6 +63,7 @@ java-devel
 openssl
 ruby
 bc
+quota
 %end
 
 %pre
@@ -86,7 +87,7 @@ cp /etc/resolv.conf /mnt/sysimage/etc/resolv.conf
 set -x
 echo
 echo "#######################################"
-echo "# Configurazione post installazione   #"
+echo "# configurazione post installazione   #"
 echo "#######################################"
 echo
 
