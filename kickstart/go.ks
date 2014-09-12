@@ -10,7 +10,7 @@ repo --name=updates --baseurl=http://mirror.centos.org/centos/6/updates/x86_64
 repo --name=epel --baseurl=http://download.fedoraproject.org/pub/epel/6/x86_64
 
 #rootpw openshift
-rootpw --iscrypted $1$hEWLwQUF$iDTpbGUtUTOgiGatJO4eL/
+rootpw --iscrypted $1$zVrqeWqd$dW4sWT90hcWdY/sqIxAB0/
 
 # Localizzazione italiana
 #lang en_US.UTF-8

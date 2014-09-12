@@ -274,6 +274,7 @@ ipa-admintools
 c-ares-1.7.0-6.el6
 mod_auth_kerb
 pam_mkhomedir.so
+libsss_sudo
 LISTA
 
 # lista software installato dopo OpenShift
@@ -309,9 +310,19 @@ yum update -y
 # aggancio al dominio kerberos
 if [ "$ipapassword" != "" ]
 then
-	ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates -U -d &>>$console 
+	ipa-client-install --domain=ar4k.net --hostname=$hostName -w $ipapassword --mkhomedir --enable-dns-updates --force-join -U -d &>>$console 
 	export bind_krb_principal=HTTP/$hostName
 	export bind_krb_keytab=/etc/krb5.keytab
+	# aggiunge il supporto sudo
+	echo "sudoers: files sss" >> /etc/nsswitch.conf
+	sed -i "s/^\(services =.*$\)/\1, sudo/" /etc/sssd/sssd.conf
+	aggiunta="#aggiunta per sudo\nsudo_provider = ldap\nldap_uri = ldap://ipa.ar4k.net\nldap_sudo_search_base = ou=sudoers,dc=ar4k,dc=net\nldap_sasl_mech = GSSAPI\nldap_sasl_authid = host/$hostName\nldap_sasl_realm = AR4K.NET\n##"
+	sed -i "s/\(^cache_credentials.*$\)/$(echo $aggiunta | sed 's/\//\\\//g' )\n\1/" /etc/sssd/sssd.conf
+	/etc/init.d/sssd restart
+	# genera una password casuale di root
+	rootpswd=$( date | md5sum )
+	echo $rootpswd > /root/root.password
+	echo $rootpswd | passwd --stdin root	
 else
 	echo "password non trovata, non accedo al dominio AR4K.NET" >>$console
 fi
