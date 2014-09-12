@@ -125,7 +125,7 @@ ntpdate ipa.ar4k.net
 hwclock --systohc
 
 # Se la partizione è più grande, espande il filesystem
-resize2fs /
+resize2fs $(mount | grep ' / ' | cut -d\  -f1)
 
 # Setta quota in filesystem di root
 sed -i 's/\(^.*\t\/ .*\)defaults\(.*$\)/\1defaults,usrquota\2/' /etc/fstab
