@@ -388,9 +388,10 @@ DEMO
 chmod +x demo.sh
 
 # per aggangiare OpenShift a Kerberos
+# il servizio va precedentemente creato
 cat > ar4k.sh << AR4KSH
-kinit -kt /etc/krb5.keytab host/master.nodi.ar4k.net
-ipa service-add HTTP/${hostName} --force
+kinit -kt /etc/krb5.keytab host/${hostName}
+#ipa service-add HTTP/${hostName} --force
 ipa-getkeytab -s ipa.ar4k.net -k /etc/httpd/conf/krb5.keytab -p HTTP/${hostName}
 chown apache /etc/httpd/conf/krb5.keytab
 chmod 660 /etc/httpd/conf/krb5.keytab

@@ -5,6 +5,8 @@ Script e template per gestire la piattaforma AR4K GO
 Progetto di laboratorio per implementare AR4K Go
 by Ambrosini (Rossonet s.c.a r.l.)
 
+Il profilo su FreeIPA deve contere l'host e il relativo servzio HTTP/host
+
 Esempi parametri di configurazione per test:
 http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/bottegaio.yml;master.nodi.bottegaio.net;<password otp>;0
 http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/lachimera.yml;master.nodi.lachimera.net;<password otp>;1
