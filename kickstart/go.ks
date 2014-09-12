@@ -67,13 +67,12 @@ quota
 %end
 
 %pre
-for I in $(cat /proc/cmdline)
-	do case "$I" in oo_*=*) eval "export $I";; esac
-done
+cat /proc/cmdline >/tmp/ks.cmdline
 %end
 
 %post --nochroot
 cp /etc/resolv.conf /mnt/sysimage/etc/resolv.conf
+cp /tmp/ks.cmdline /mnt/sysimage/root/ks.cmdline
 %end
 
 %post --log=/root/anaconda-post.log
@@ -90,6 +89,10 @@ echo "#######################################"
 echo "# configurazione post installazione   #"
 echo "#######################################"
 echo
+
+for parametro in $(cat /root/ks.cmdline)
+        do case "$parametro" in oo_*=*) eval $parametro;; esac
+done
 
 ########################################################################
 
