@@ -65,6 +65,12 @@ ruby
 bc
 %end
 
+%pre
+for I in $(cat /proc/cmdline)
+	do case "$I" in oo_*=*) eval "export $I";; esac
+done
+%end
+
 %post --nochroot
 cp /etc/resolv.conf /mnt/sysimage/etc/resolv.conf
 %end
@@ -86,7 +92,7 @@ echo
 
 ########################################################################
 
-echo "$CONF_OO_CONFIG;$CONF_OO_HOST;$CONF_OO_OTP;$CONF_OO_NAT" > /root/go.conf
+echo "$oo_config;$oo_host;$oo_otp;$oo_nat" > /root/go.conf
 
 ########################################################################
 
