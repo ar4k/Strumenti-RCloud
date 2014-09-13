@@ -402,10 +402,14 @@ chmod +x demo.sh
 # il servizio va precedentemente creato
 cat > ar4k.sh << AR4KSH
 kinit -kt /etc/krb5.keytab host/${hostName}
-#ipa service-add HTTP/${hostName} --force
+ipa service-add HTTP/${hostName} --force
 ipa-getkeytab -s ipa.ar4k.net -k /etc/httpd/conf/krb5.keytab -p HTTP/${hostName}
+ipa service-add DNS/${hostName} --force
+ipa-getkeytab -s ipa.ar4k.net -k /etc/dns.keytab -p DNS/${hostName}
 chown apache /etc/httpd/conf/krb5.keytab
 chmod 660 /etc/httpd/conf/krb5.keytab
+chown apache /etc/dns.keytab
+chmod 660 /etc/dns.keytab
 
 ln -s /etc/httpd/conf/krb5.keytab /var/www/openshift/broker/httpd/conf.d/http.keytab
 ln -s /etc/httpd/conf/krb5.keytab /var/www/openshift/console/httpd/conf.d/http.keytab
@@ -421,6 +425,13 @@ sed -i "s/EXAMPLE.COM/AR4K.NET/" /var/www/openshift/console/httpd/conf.d/openshi
 
 sed -i "s/www.example.com/${hostName}/" /var/www/openshift/broker/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf
 sed -i "s/www.example.com/${hostName}/" /var/www/openshift/console/httpd/conf.d/openshift-origin-auth-remote-user-kerberos.conf
+
+cp /etc/openshift/plugins.d/openshift-origin-dns-nsupdate.conf openshift-origin-dns-nsupdate.conf.bk
+grep BIND_ZONE openshift-origin-dns-nsupdate.conf.bk > /etc/openshift/plugins.d/openshift-origin-dns-nsupdate.conf
+echo BIND_SERVER="54.217.221.217" >> /etc/openshift/plugins.d/openshift-origin-dns-nsupdate.conf
+echo BIND_PORT=53 >> /etc/openshift/plugins.d/openshift-origin-dns-nsupdate.conf
+echo BIND_KRB_PRINCIPAL="DNS/${hostName}@AR4K.NET" >> /etc/openshift/plugins.d/openshift-origin-dns-nsupdate.conf
+echo BIND_KRB_KEYTAB="/etc/dns.keytab" >> /etc/openshift/plugins.d/openshift-origin-dns-nsupdate.conf
 
 /etc/init.d/openshift-broker restart
 /etc/init.d/openshift-console restart
