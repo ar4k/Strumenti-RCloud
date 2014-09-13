@@ -512,6 +512,16 @@ then
 	echo 'ln -sf ${SYSTEM_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar ${OPENSHIFT_JBOSSEWS_DIR}/bin/commons-logging-tomcat-juli.jar' >> $file2
 fi
 
+################################################################
+################################################################
+####### personalizzazioni
+
+echo "PRODUCT_LOGO=http://repo.ar4k.eu/raw/strumenti-go.git/master/immagini/ar4k_logo.pnp" >> /etc/openshift/console.conf
+echo "PRODUCT_TITLE=AR4K OpenShift Origin" >> /etc/openshift/console.conf
+
+
+
+
 echo "lancio la diagnostica.." >> $console
 ./oo-diagnostics &> diagnostica.log
 
