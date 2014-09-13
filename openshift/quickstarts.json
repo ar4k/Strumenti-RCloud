@@ -3,7 +3,7 @@
     {
         "quickstart": {
             "id": "1",
-            "name": "CakePHP",
+            "name": "CakePHP (2)",
             "website": "http://cakephp.org/",
             "initial_git_url": "git://github.com/openshift/cakephp-example.git",
             "cartridges": ["php-5", "mysql-5"],
