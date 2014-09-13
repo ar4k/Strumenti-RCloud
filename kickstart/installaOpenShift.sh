@@ -519,8 +519,11 @@ fi
 echo "PRODUCT_LOGO=http://repo.ar4k.eu/raw/strumenti-go.git/master/immagini/ar4k_logo.pnp" >> /etc/openshift/console.conf
 echo "PRODUCT_TITLE=AR4K OpenShift Origin" >> /etc/openshift/console.conf
 
+mv /etc/openshift/quickstarts.json ./quickstarts.json.bk
+wget -O /etc/openshift/quickstarts.json http://repo.ar4k.eu/raw/strumenti-go.git/master/openshift/quickstarts.json
 
-
+################################################################
+################################################################
 
 echo "lancio la diagnostica.." >> $console
 ./oo-diagnostics &> diagnostica.log
