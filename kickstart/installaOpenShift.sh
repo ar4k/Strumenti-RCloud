@@ -516,7 +516,7 @@ fi
 ################################################################
 ####### personalizzazioni
 
-echo "PRODUCT_LOGO=http://repo.ar4k.eu/raw/strumenti-go.git/master/immagini/ar4k_logo.pnp" >> /etc/openshift/console.conf
+echo "PRODUCT_LOGO=http://repo.ar4k.eu/raw/strumenti-go.git/master/immagini/ar4k_logo.png" >> /etc/openshift/console.conf
 echo "PRODUCT_TITLE=AR4K OpenShift Origin" >> /etc/openshift/console.conf
 
 mv /etc/openshift/quickstarts.json ./quickstarts.json.bk
