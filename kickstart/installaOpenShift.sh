@@ -286,12 +286,15 @@ php54-php-mcrypt
 php54-php-pgsql
 php54-php-snmp
 php54-php-soap
+php54-php-ldap
 php54-php-pear
 php-xml
 php54-php-mbstring
 rubygem-rdoc
 telnet
 rubygem-openshift-origin-auth-kerberos
+php-ldap
+php-soap
 LISTAPOST
 
 # esclusi per conflitto tra MariaDB-common-5.5.39-1.i386 e mysql-libs-5.1.73-3.el6_5.x86_64
