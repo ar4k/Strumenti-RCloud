@@ -112,7 +112,7 @@ echo "Inizio la copia. Attendere..."
 #. Spegne i servizi critici durante la lavorazione ( /etc/rossonet/serviziDaGestire.txt )
 $HOME_ROSSONET/spegniServizi.sh
 #.
-rsync -av --exclude=/etc/rossonet/*.rsyncremove --exclude=/root/.bash_history --exclude=/etc/rossonet/context.sh --exclude=/etc/rossonet/ec2Account --exclude=/etc/rossonet/ec2-cert.pem --exclude=/etc/rossonet/ec2-pk.pem --exclude=/home/*/.bash_history --exclude=/etc/ssh/ssh_host_* --exclude=/etc/ssh/moduli --exclude=/etc/udev/rules.d/*persistent-net.rules --exclude=/var/lib/ec2/* --exclude=/mnt/* --exclude=/proc/* --exclude=/store/* --exclude=/tmp/* --exclude=/sys/* / $XEN_MOUNT_POINT >/dev/null
+rsync -av --exclude=/etc/rossonet/*.rsyncremove --exclude=/root/.bash_history --exclude=/etc/rossonet/context.sh --exclude=/etc/rossonet/ec2Account --exclude=/etc/rossonet/ec2-cert.pem --exclude=/etc/rossonet/ec2-pk.pem --exclude=/home/*/.bash_history --exclude=/etc/ssh/ssh_host_* --exclude=/etc/ssh/moduli --exclude=/etc/udev/rules.d/*persistent-net.rules --exclude=/var/lib/ec2/* --exclude=/mnt/* --exclude=/proc/* --exclude=/tmp/* --exclude=/sys/* / $XEN_MOUNT_POINT >/dev/null
 $HOME_ROSSONET/accendeServizi.sh
 #clear out log files
 cd $XEN_MOUNT_POINT/var/log
@@ -138,40 +138,20 @@ sleep 5
 umount $XEN_MOUNT_POINT
 rm -rf $XEN_MOUNT_POINT
 echo
-if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
-then
-	# x86_64
-	# Lancia la creazione
-	echo "Esegue: ec2-bundle-image --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY --image $IMAGE --prefix $nomemacchina --user $AWS_ACCOUNT_NUMBER --destination /mnt/tmp --arch x86_64 --kernel aki-71665e05"
-	ec2-bundle-image --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY --image $IMAGE --prefix $nomemacchina --user $AWS_ACCOUNT_NUMBER --destination /mnt/tmp --arch x86_64 --kernel aki-71665e05
-	echo
-	echo Creazione Bundle Terminata
-	echo
-	# Upload della macchina su S3
-	echo "Esegue: ec2-upload-bundle -b $AWS_AMI_BUCKET --manifest /mnt/tmp/$nomemacchina.manifest.xml -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY --location EU"
-	ec2-upload-bundle -b $AWS_AMI_BUCKET --manifest /mnt/tmp/$nomemacchina.manifest.xml -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY --location EU
-	echo Upload Terminato
-	echo
-	echo registra immagine
-	echo "Esegue: ec2-register $AWS_AMI_BUCKET/$nomemacchina.manifest.xml -n $nomemacchina --description \"CentOS 6.x (x86_64) $nomemacchina\" --architecture x86_64 --kernel aki-71665e05"
-	ec2-register $AWS_AMI_BUCKET/$nomemacchina.manifest.xml -n $nomemacchina --description "CentOS 6.x (x86_64) $nomemacchina" --architecture x86_64 --kernel aki-71665e05
-else
-	# i386
-	# Lancia la creazione
-	echo "Esegue: ec2-bundle-image --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY --image $IMAGE --prefix $nomemacchina --user $AWS_ACCOUNT_NUMBER --destination /mnt/tmp --arch i386 --kernel aki-75665e01"
-	ec2-bundle-image --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY --image $IMAGE --prefix $nomemacchina --user $AWS_ACCOUNT_NUMBER --destination /mnt/tmp --arch i386 --kernel aki-75665e01
-	echo
-	echo Creazione Bundle Terminata
-	echo
-	# Upload della macchina su S3
-	echo "Esegue: ec2-upload-bundle -b $AWS_AMI_BUCKET --manifest /mnt/tmp/$nomemacchina.manifest.xml -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY --location EU"
-	ec2-upload-bundle -b $AWS_AMI_BUCKET --manifest /mnt/tmp/$nomemacchina.manifest.xml -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY --location EU
-	echo Upload Terminato
-	echo
-	echo registra immagine
-	echo "Esegue: ec2-register $AWS_AMI_BUCKET/$nomemacchina.manifest.xml -n $nomemacchina --description \"CentOS 6.x (i386) $nomemacchina\" --architecture i386 --kernel aki-75665e01"
-	ec2-register $AWS_AMI_BUCKET/$nomemacchina.manifest.xml -n $nomemacchina --description "CentOS 6.x (i386) $nomemacchina" --architecture i386 --kernel aki-75665e01
-fi
+# Lancia la creazione
+echo "Esegue: ec2-bundle-image --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY --image $IMAGE --prefix $nomemacchina --user $AWS_ACCOUNT_NUMBER --destination /mnt/tmp --arch i386 --kernel aki-75665e01"
+ec2-bundle-image --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY --image $IMAGE --prefix $nomemacchina --user $AWS_ACCOUNT_NUMBER --destination /mnt/tmp --arch i386 --kernel aki-75665e01
+echo
+echo Creazione Bundle Terminata
+echo
+# Upload della macchina su S3
+echo "Esegue: ec2-upload-bundle -b $AWS_AMI_BUCKET --manifest /mnt/tmp/$nomemacchina.manifest.xml -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY --location EU"
+ec2-upload-bundle -b $AWS_AMI_BUCKET --manifest /mnt/tmp/$nomemacchina.manifest.xml -a $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY --location EU
+echo Upload Terminato
+echo
+echo registra immagine
+echo "Esegue: ec2-register $AWS_AMI_BUCKET/$nomemacchina.manifest.xml -n $nomemacchina --description \"CentOS 6.x (i386) $nomemacchina\" --architecture i386 --kernel aki-75665e01"
+ec2-register $AWS_AMI_BUCKET/$nomemacchina.manifest.xml -n $nomemacchina --description "CentOS 6.x (i386) $nomemacchina" --architecture i386 --kernel aki-75665e01
 echo ok
 echo
 echo
@@ -180,3 +160,4 @@ rm -rf /mnt/tmp
 rm -rf $IMAGE
 echo "Operazione terminata"
 exit 0
+
