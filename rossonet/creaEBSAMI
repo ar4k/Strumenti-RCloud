@@ -212,6 +212,11 @@ echo "Cancella il Volume..."
 ec2delvol $VOL_ID
 
 echo "REGISTRA LA MACCHINA"
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
 ec2reg -s $SNAP_ID -a x86_64 -d "$DESCRIZIONE" -n $NOME-ebs --kernel aki-71665e05
+else
+ec2reg -s $SNAP_ID -a i386 -d "$DESCRIZIONE" -n $NOME-ebs --kernel aki-75665e01
+fi
 echo "Operazione terminata"
 exit 0

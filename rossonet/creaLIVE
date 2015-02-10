@@ -142,7 +142,12 @@ date >> $XEN_MOUNT_POINT/etc/rossonet/LIVE
 if [ -f $XEN_MOUNT_POINT/etc/fstab ]
 then
  mv $XEN_MOUNT_POINT/etc/fstab $XEN_MOUNT_POINT/etc/fstab.bak
- cp /opt/rossonet/live/fstab $XEN_MOUNT_POINT/etc/fstab
+ if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+ then
+ cp /opt/rossonet/live64/fstab $XEN_MOUNT_POINT/etc/fstab
+ else
+ cp /opt/rossonet/live32/fstab $XEN_MOUNT_POINT/etc/fstab
+ fi
 fi
 sync;sync
 echo
@@ -155,18 +160,34 @@ echo
 echo "Crea la struttura della directory..."
 mkdir -p /mnt/live
 destinazione="/mnt/live/$nomemacchina"
-cp -a /opt/rossonet/live/livecd $destinazione
+if [ -f $XEN_MOUNT_POINT/etc/fstab ]
+then
+cp -a /opt/rossonet/live64/livecd $destinazione
+else
+cp -a /opt/rossonet/live32/livecd $destinazione
+fi
 echo
 echo "Crea il disco squashfs..."
 mkdir -p /mnt/live/LiveOS
 mv $IMAGE /mnt/live/LiveOS/ext3fs.img
-e2label /mnt/live/LiveOS/ext3fs.img _CentOS-6.3-x86_64
-cd /mnt/live
-mksquashfs LiveOS $destinazione/LiveOS/squashfs.img -keep-as-directory
-rm -rf LiveOS
-cd /mnt/live
-echo "Crea il DVD..."
-mkisofs -o $nomemacchina.iso -v -J -R -D -A CentOS-6.3-x86_64-LiveDVD -V CentOS-6.3-x86_64-LiveDVD -no-emul-boot -boot-info-table -boot-load-size 4 -b isolinux/isolinux.bin -c isolinux/boot.cat $destinazione
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
+  e2label /mnt/live/LiveOS/ext3fs.img _CentOS-6.3-x86_64
+  cd /mnt/live
+  mksquashfs LiveOS $destinazione/LiveOS/squashfs.img -keep-as-directory
+  rm -rf LiveOS
+  cd /mnt/live
+  echo "Crea il DVD..."
+  mkisofs -o $nomemacchina.iso -v -J -R -D -A CentOS-6.3-x86_64-LiveDVD -V CentOS-6.3-x86_64-LiveDVD -no-emul-boot -boot-info-table -boot-load-size 4 -b isolinux/isolinux.bin -c isolinux/boot.cat $destinazione
+else
+  e2label /mnt/live/LiveOS/ext3fs.img _CentOS-6.3-i386
+  cd /mnt/live
+  mksquashfs LiveOS $destinazione/LiveOS/squashfs.img -keep-as-directory
+  rm -rf LiveOS
+  cd /mnt/live
+  echo "Crea il DVD..."
+  mkisofs -o $nomemacchina.iso -v -J -R -D -A CentOS-6.3-i386-LiveDVD -V CentOS-6.3-i386-LiveDVD -no-emul-boot -boot-info-table -boot-load-size 4 -b isolinux/isolinux.bin -c isolinux/boot.cat $destinazione
+fi
 echo
 echo "Ripulisce..."
 rm -rf $destinazione

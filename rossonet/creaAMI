@@ -129,7 +129,12 @@ fi
 if [ -f $XEN_MOUNT_POINT/boot/grub/grub.conf ]
 then
  mv $XEN_MOUNT_POINT/boot/grub/grub.conf $XEN_MOUNT_POINT/boot/grub/grub.conf.bak
- cp $HOME_ROSSONET/ami/grub.conf $XEN_MOUNT_POINT/boot/grub/grub.conf
+ if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+ then
+  cp $HOME_ROSSONET/ami/grub64.conf $XEN_MOUNT_POINT/boot/grub/grub.conf
+ else
+  cp $HOME_ROSSONET/ami/grub.conf $XEN_MOUNT_POINT/boot/grub/grub.conf
+ fi
 fi
 echo
 sync; sync

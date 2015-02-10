@@ -191,8 +191,14 @@ if [ "$centsincro" == "si"  ]
 then
  echo "Inizio Sincronizzazione da repository CentOS..."
  mkdir -p $dir_appoggio/centos
+ if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+  then
 #. mi.mirror.garr.it::CentOS/5.8/os/x86_64
- rsync  -avSHP --delete --exclude "local*" mi.mirror.garr.it::CentOS/5.8/os/x86_64 $dir_appoggio/centos
+   rsync  -avSHP --delete --exclude "local*" mi.mirror.garr.it::CentOS/5.8/os/x86_64 $dir_appoggio/centos
+  else
+#. mi.mirror.garr.it::CentOS/5.8/os/xi386
+   rsync  -avSHP --delete --exclude "local*" mi.mirror.garr.it::CentOS/5.8/os/i386 $dir_appoggio/centos
+  fi
  #cp -a $dir_appoggio/centos/* centos/
  if [ "$eucarepo" == "si" ]
  then
@@ -203,9 +209,10 @@ then
    rm -rf $dir_appoggio/euca
   fi
 # crea la copia locale del repo euca
-#. http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/
   mkdir -p $dir_appoggio/euca
   cd $dir_appoggio/euca
+ if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+  then
   wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/aoetools-21-1.el4.x86_64.rpm  
   wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/euca-axis2c-1.6.0-1.x86_64.rpm  
   wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/euca-rampartc-1.3.0-1.x86_64.rpm  
@@ -232,6 +239,34 @@ then
   wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/python25-libs-2.5.1-bashton1.x86_64.rpm  
   wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/vblade-14-1mdv2008.1.i586.rpm  
   wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/x86_64/vtun-3.0.2-1.el5.rf.x86_64.rpm  
+else
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/aoetools-21-1.el4.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/euca-axis2c-1.6.0-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/euca-rampartc-1.3.0-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/euca2ools-1.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-1.6.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-1.6.2-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-cc-1.6.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-cc-1.6.2-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-cloud-1.6.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-cloud-1.6.2-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-common-java-1.6.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-common-java-1.6.2-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-gl-1.6.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-gl-1.6.2-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-nc-1.6.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-nc-1.6.2-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-sc-1.6.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-sc-1.6.2-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-walrus-1.6.2-0.1.rc1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/eucalyptus-walrus-1.6.2-1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/groovy-1.6.5-1.noarch.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/lzo2-2.02-3.el5.rf.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/python25-2.5.1-bashton1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/python25-libs-2.5.1-bashton1.i386.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/vblade-14-1mdv2008.1.i586.rpm
+  wget http://www.eucalyptussoftware.com/downloads/repo/eucalyptus/1.6.2/yum/centos/i386/vtun-3.0.2-1.el5.rf.i386.rpm
+fi
  fi
  echo "Sincronizza da repository Webmin..."
  mkdir -p $dir_appoggio/webmin
@@ -246,15 +281,22 @@ then
  echo "Sincronizza da repository Epel..."
  mkdir -p $dir_appoggio/fedora-epel
  cd $dir_appoggio
-#. rsync://linux.mirrors.es.net/fedora-epel/5Server/x86_64
-# rsync -avH --exclude "debug" rsync://linux.mirrors.es.net/fedora-epel/5Server/x86_64 fedora-epel/
+ if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+  then
  rsync -avH --exclude "debug" rsync://mirror.bytemark.co.uk/fedora/epel/5Server/x86_64 fedora-epel/
+  else
+ rsync -avH --exclude "debug" rsync://mirror.bytemark.co.uk/fedora/epel/5Server/i386 fedora-epel/
+ fi
  echo "Sincronizza da repository updates..."
  mkdir -p $dir_appoggio/updates
  cd $dir_appoggio
-#. mi.mirror.garr.it::CentOS/5.8/updates/x86_64
 #.
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
  rsync  -avSHP --delete --exclude "local*" mi.mirror.garr.it::CentOS/5.8/updates/x86_64 updates/
+else
+ rsync  -avSHP --delete --exclude "local*" mi.mirror.garr.it::CentOS/5.8/updates/i386 updates/
+fi
  if [ "$mischia" == "si"  ]
  then
   echo "Crea il repository unico mix con dentro tutti gli RPM..."
@@ -269,22 +311,43 @@ then
   ln $dir_appoggio/euca/*.rpm $dir_appoggio/mix/
 # Copia da CentOS ( per copiare un numero di file elevato uso il seguente ciclo for )
   echo -n "CentOS "
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
   for file in $( find $dir_appoggio/centos/x86_64/CentOS -name *.rpm )
   do
    ln $file $dir_appoggio/mix/
   done
+else
+  for file in $( find $dir_appoggio/centos/i386/CentOS -name *.rpm )
+  do
+   ln $file $dir_appoggio/mix/
+  done
+fi
 # Copia da Webmin
   echo -n "Webmin "
   ln $dir_appoggio/webmin/*.rpm $dir_appoggio/mix/
 # Copia da Epel ( per copiare un numero di file elevato uso il seguente ciclo for )
   echo -n "Epel "
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
   for filee in $( find $dir_appoggio/fedora-epel/x86_64/ -name *.rpm )
   do
    ln $filee $dir_appoggio/mix/
   done
+else
+  for filee in $( find $dir_appoggio/fedora-epel/i386/ -name *.rpm )
+  do
+   ln $filee $dir_appoggio/mix/
+  done
+fi
 # Copia da update
   echo -n "Updates "
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
   ln $dir_appoggio/updates/x86_64/RPMS/*.rpm $dir_appoggio/mix/
+else
+  ln $dir_appoggio/updates/i386/RPMS/*.rpm $dir_appoggio/mix/
+fi
  fi
  echo
  echo "-----------------"
@@ -299,10 +362,18 @@ then
  mkdir -p $dir_kickstart/isolinux/images
  mkdir -p $dir_kickstart/isolinux/ks
 # Copia i file iniziali
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
  cp $dir_appoggio/centos/x86_64/isolinux/* $dir_kickstart/isolinux/
  cp $dir_appoggio/centos/x86_64/.discinfo $dir_kickstart/isolinux/
  cp -a $dir_appoggio/centos/x86_64/images/* $dir_kickstart/isolinux/images/
  cp $dir_appoggio/centos/x86_64/repodata/comps.xml $dir_kickstart/
+else
+ cp $dir_appoggio/centos/i386/isolinux/* $dir_kickstart/isolinux/
+ cp $dir_appoggio/centos/i386/.discinfo $dir_kickstart/isolinux/
+ cp -a $dir_appoggio/centos/i386/images/* $dir_kickstart/isolinux/images/
+ cp $dir_appoggio/centos/i386/repodata/comps.xml $dir_kickstart/
+fi
  cp $dir_confeziona/iso/centos-master.cfg $dir_kickstart/isolinux/ks/ks.cfg
  grep -v 'rimuoviOP66' $dir_confeziona/iso/centos-master.cfg > $dir_confeziona/iso/centos-nodo.cfg
  cp $dir_confeziona/iso/centos-nodo.cfg $dir_kickstart/isolinux/ks/nodo.cfg
@@ -331,10 +402,16 @@ then
   mkdir -p $dir_kickstart/isolinux/CentOS
   cd $dir_kickstart/isolinux/CentOS
 # parse_comps.pl legge i gruppi configurati in se stesso da comps.xml QUANDO SI AGGIUNGO GRUPPI AL KS BISOGNA AGIRE ANCHE SU parse_comps.pl
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
   $dir_confeziona/iso/parse_comps.pl $dir_kickstart/comps.xml $dir_appoggio/mix x86_64
+  arch=x86_64
+else
+  $dir_confeziona/iso/parse_comps.pl $dir_kickstart/comps.xml $dir_appoggio/mix i386
+  arch=i386
+fi
 # Quando si aggiungono dei pacchetti singoli nel KS bisogna copiare i file qui
   echo "Copia gli rpm aggiuntivi e personalizzati..."
-  arch=x86_64
   cp $dir_appoggio/mix/ntp-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
   cp $dir_appoggio/mix/java-1.6.0-openjdk-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
   cp $dir_appoggio/mix/ant-[0-9]*.$arch.rpm $dir_kickstart/isolinux/CentOS/
@@ -558,7 +635,12 @@ then
   echo "Sistema le dipendenze..."
   cd $dir_kickstart/isolinux/CentOS
 # Per ogni pacchetto copiato prima, follow_deps.pl copia anche le dipendenze e le dipendenze delle dipendenze
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
   $dir_confeziona/iso/follow_deps.pl $dir_appoggio/mix x86_64
+else
+  $dir_confeziona/iso/follow_deps.pl $dir_appoggio/mix i386
+fi
  fi
 
  if [ "$copiaop" == "si"  ]

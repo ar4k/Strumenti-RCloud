@@ -273,7 +273,12 @@ qemu-img convert -f raw -O vmdk $nomemacchina.dsk /mnt/ova/$nomemacchina.vmdk
 rm $nomemacchina.dsk
 echo
 echo "Creo il pacchetto ova"
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
+cat /opt/rossonet/ova/template-64.vmx | sed "s/<discolabel>/$nomemacchina/g" > /mnt/ova/$nomemacchina.vmx
+else
 cat /opt/rossonet/ova/template.vmx | sed "s/<discolabel>/$nomemacchina/g" > /mnt/ova/$nomemacchina.vmx
+fi
 cp /opt/rossonet/ova/dati.vmdk /mnt/ova/
 cd /mnt/ova
 # Crea OVA
