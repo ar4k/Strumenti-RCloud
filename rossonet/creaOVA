@@ -235,8 +235,12 @@ mv grub/* $DISCO_MOUNT_POINT/boot/grub/
 rm -rf grub
 rm grub.tgz
 #echo
-
-cp /opt/rossonet/ova/grub.conf $DISCO_MOUNT_POINT/boot/grub/grub.conf.new
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
+then
+cp /opt/rossonet/ova/grub64.conf $DISCO_MOUNT_POINT/boot/grub/grub.conf.new
+else
+cp /opt/rossonet/ova/grub32.conf $DISCO_MOUNT_POINT/boot/grub/grub.conf.new
+fi
 
 mv $DISCO_MOUNT_POINT/etc/fstab $DISCO_MOUNT_POINT/etc/fstab.bak
 mv $DISCO_MOUNT_POINT/boot/grub/grub.conf $DISCO_MOUNT_POINT/boot/grub/grub.conf.bak
