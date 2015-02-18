@@ -160,7 +160,7 @@ echo
 echo "Crea la struttura della directory..."
 mkdir -p /mnt/live
 destinazione="/mnt/live/$nomemacchina"
-if [ -f $XEN_MOUNT_POINT/etc/fstab ]
+if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
 then
 cp -a /opt/rossonet/live64/livecd $destinazione
 else
