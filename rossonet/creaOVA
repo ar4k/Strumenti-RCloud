@@ -279,9 +279,9 @@ echo
 echo "Creo il pacchetto ova"
 if [ 1 -eq $(uname -a | grep x86_64 | wc -l) ]
 then
-cat /opt/rossonet/ova/template-64.vmx | sed "s/<discolabel>/$nomemacchina/g" > /mnt/ova/$nomemacchina.vmx
+cat /opt/rossonet/ova/template64.vmx | sed "s/<discolabel>/$nomemacchina/g" > /mnt/ova/$nomemacchina.vmx
 else
-cat /opt/rossonet/ova/template.vmx | sed "s/<discolabel>/$nomemacchina/g" > /mnt/ova/$nomemacchina.vmx
+cat /opt/rossonet/ova/template32.vmx | sed "s/<discolabel>/$nomemacchina/g" > /mnt/ova/$nomemacchina.vmx
 fi
 cp /opt/rossonet/ova/dati.vmdk /mnt/ova/
 cd /mnt/ova
