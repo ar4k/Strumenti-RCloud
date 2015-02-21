@@ -9,7 +9,7 @@ strace
 vim-enhanced
 wget
 curl
-@development
+#@development
 bind
 java-devel
 openssl
@@ -61,8 +61,8 @@ libmad
 libmatroska
 lsdvd
 xine-lib-extras
-xine-lib-extras-nonfree
-xine-lib-pulseaudio
+#xine-lib-extras-nonfree
+#xine-lib-pulseaudio
 xine-lib-extras-freeworld
 faad2
 faac
@@ -70,7 +70,7 @@ libdca
 wget
 compat-libstdc++-33
 compat-libstdc++-296
-9copy
+#9copy
 devede
 brasero
 
@@ -93,7 +93,7 @@ gdouros-*fonts
 gfs-*fonts
 gnu-free-*fonts
 google-droid-*fonts
-hartke-aurulent-*fonts
+#hartke-aurulent-*fonts
 mgopen-*fonts
 mona-*fonts
 oflb-*fonts
@@ -115,7 +115,7 @@ libmad
 #easylife media player
 libdvdnav
 libdvdread
-totem-mozplugin
+#totem-mozplugin
 mplayer
 mplayer-gui
 kplayer
@@ -132,7 +132,7 @@ xmms-pulse
 audio-convert-mod
 
 #easylife temi
-faenza-icon-theme
+#faenza-icon-theme
 elementary-icon-theme
 echo-icon-theme
 tango-icon-theme
@@ -140,7 +140,7 @@ tango-icon-theme-extras
 
 #easylife utils
 nautilus-open-terminal
-system-config-boot
+#system-config-boot
 system-config-language
 dconf-editor
 gnome-tweak-tool
@@ -180,6 +180,27 @@ onionshare
 tor
 wireshark
 wireshark-gnome
+xchat
+xchat-gnome
+rosegarden4
+gazebo
+gazebo-ode
+gazebo-media
+gazebo-doc
+player-gazebo
+ode
+weka
+pycam
+gmsh
+freecad
+grass
+qgis-grass
+qgis
+poedit
+ekiga
+virt-v2v
+virt-manager
+liveusb-creator
 
 # Da aggiungere:
 # grails

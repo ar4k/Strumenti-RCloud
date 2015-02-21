@@ -5,7 +5,7 @@
 %include fedora-workstation-packages.ks
 %include fedora-rossonet-packages.ks
 
-part / --size 10240 
+part / --size 12264 --fstype ext4
 
 rootpw --iscrypted $1$zVrqeWqd$dW4sWT90hcWdY/sqIxAB0/
 
