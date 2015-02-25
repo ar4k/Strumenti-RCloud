@@ -1,31 +1,31 @@
-## strumenti-go
+# strumenti-go
 
 Script e template per gestire la piattaforma AR4K GO, CentOS, OpenShift
 
-Progetto di laboratorio per implementare AR4K Go
-by Ambrosini (Rossonet s.c.a r.l.)
+###Progetto di laboratorio per implementare AR4K Go
+###by Ambrosini (Rossonet s.c.a r.l.)
 primo laboratorio con Gianni Ghedini c/o Acantho S.p.A.
 
--- Sezione Script creazione iso Fedora --
+##Sezione Script creazione iso Fedora
 
 requisiti: (da completare)
 
 uso:
 (da root)
-#git clone https://github.com/rossonet/Strumenti-RCloud.git
-#cd kickstart/
-#./fedora-creaLive.sh fedora-client-rossonet.ks
+git clone https://github.com/rossonet/Strumenti-RCloud.git
+cd kickstart/
+./fedora-creaLive.sh fedora-client-rossonet.ks
 
 L'immagine generata è un DVD Fedora live 21 con funzione di installazione.
 E' possibile creare una chiavetta USB avviabile con la funzione di salvataggio dei dati utilizzando questa spin Rossonet. (https://fedorahosted.org/liveusb-creator/)
 
--------- Sezione Script Rossonet -------- 
+##Sezione Script Rossonet 
 
 Nella cartella Rossonet sono presenti gli script bash per clonare il sistema sulle varie piattaforme virtuali
 (da fare RPM e Repository yum)
 
 
----------- Sezione OpenShift ------------
+##Sezione OpenShift
 
 l'account host deve poter creare i servizi su se stesso in FREEIPA
 
@@ -54,17 +54,15 @@ La seguente linea di comando, data su un sistema host con KVM o XEN e virt-manag
 
 virt-install -n <nome macchina virtuale> -r 1600 --vcpus=1 --os-variant=rhel6 -w bridge:virbr0 --disk path=/mnt/rossonet.img,size=16 -l http://mirror.centos.org/centos/6.5/os/x86_64/ -x "ks=https://hc.rossonet.net/openshift oo_config=https://github.com/rossonet/Strumenti-RCloud/blob/master/openshift/lachimera.yml oo_host=master.nodi.lachimera.net [oo_otp=xxxxxx oo_nat=1 proxy=http://utente:xxxxxxxx@proxyvip.adn.intra:8080 ip=10.10.21.76 netmask=255.255.255.240 dns=10.10.21.1 gateway=10.10.21.100] " --os-type=linux [--paravirt]
 
-- l'opzione --paravirt funziona solo su macchine xen
+l'opzione --paravirt funziona solo su macchine xen
 
 Il relativo file di configurazione di Apache che risponde a hc.rossonet.name:
-################################################################
 <VirtualHost *:443>
 DocumentRoot /var/www/html
 ServerName hc.rossonet.name
 Redirect /openshift https://raw.githubusercontent.com/rossonet/Strumenti-RCloud/master/openshift/go.ks
 Redirect /oo https://raw.githubusercontent.com/rossonet/Strumenti-RCloud/master/openshift/installaOpenShift.sh
 </VirtualHost>
-################################################################
 
 
 Per installare da console, da utente root, su una adeguata macchina CentOS 6.x x86_64 con un'installazione minima utilizzare il comando sotto; in EC2 usare l'ami ami-6bcd591c (https://console.aws.amazon.com/ec2/home?region=eu-west-1#launchAmi=ami-6bcd591c), entrare in root con la chive pem gestita con AWS EC2 e digitare: 
