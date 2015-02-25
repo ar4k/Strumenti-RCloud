@@ -5,7 +5,7 @@
 %include fedora-workstation-packages.ks
 %include fedora-rossonet-packages.ks
 
-part / --size 12264 --fstype ext4
+part / --size 20480 --fstype ext4
 
 rootpw --iscrypted $1$zVrqeWqd$dW4sWT90hcWdY/sqIxAB0/
 
@@ -52,6 +52,7 @@ FOE
   fi
 fi
 
+# */
 # rebuild schema cache with any overrides we installed
 glib-compile-schemas /usr/share/glib-2.0/schemas
 
@@ -72,5 +73,8 @@ chown -R liveuser:liveuser /home/liveuser/
 restorecon -R /home/liveuser/
 
 EOF
+
+# Setta lo splash
+#/usr/sbin/plymouth-set-default-theme -R spinfinity
 
 %end

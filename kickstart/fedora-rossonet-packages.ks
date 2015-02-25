@@ -9,7 +9,6 @@ strace
 vim-enhanced
 wget
 curl
-#@development
 bind
 java-devel
 openssl
@@ -61,8 +60,6 @@ libmad
 libmatroska
 lsdvd
 xine-lib-extras
-#xine-lib-extras-nonfree
-#xine-lib-pulseaudio
 xine-lib-extras-freeworld
 faad2
 faac
@@ -70,7 +67,7 @@ libdca
 wget
 compat-libstdc++-33
 compat-libstdc++-296
-#9copy
+k9copy
 devede
 brasero
 
@@ -93,7 +90,6 @@ gdouros-*fonts
 gfs-*fonts
 gnu-free-*fonts
 google-droid-*fonts
-#hartke-aurulent-*fonts
 mgopen-*fonts
 mona-*fonts
 oflb-*fonts
@@ -115,7 +111,6 @@ libmad
 #easylife media player
 libdvdnav
 libdvdread
-#totem-mozplugin
 mplayer
 mplayer-gui
 kplayer
@@ -132,7 +127,6 @@ xmms-pulse
 audio-convert-mod
 
 #easylife temi
-#faenza-icon-theme
 elementary-icon-theme
 echo-icon-theme
 tango-icon-theme
@@ -140,7 +134,6 @@ tango-icon-theme-extras
 
 #easylife utils
 nautilus-open-terminal
-#system-config-boot
 system-config-language
 dconf-editor
 gnome-tweak-tool
@@ -156,6 +149,12 @@ lshw-gui
 yum-presto
 yum-fastestmirror
 autojump
+
+@electronic-lab
+@Robotics
+#@security-lab
+
+#plymouth-theme-spinfinity
 
 #Varie dallla mia esperienza
 clementine
@@ -201,6 +200,9 @@ ekiga
 virt-v2v
 virt-manager
 liveusb-creator
+livecd-tools
+createrepo
+rpm-build
 
 # Da aggiungere:
 # grails
@@ -208,5 +210,10 @@ liveusb-creator
 # metasploit
 # activemq
 # camel
+# Java Oracle
+# Switch Java
+# Codec MS
+# Fonts MS
+# EasyLife
 
 %end

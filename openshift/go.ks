@@ -104,7 +104,7 @@ cat >> /etc/rc.local << ROSSONET_POST
 
 # Post installazione AR4K
 cd /root
-wget http://repo.ar4k.eu/raw/strumenti-go.git/master/kickstart/installaOpenShift.sh
+wget https://raw.githubusercontent.com/rossonet/Strumenti-RCloud/master/openshift/installaOpenShift.sh
 chmod +x installaOpenShift.sh
 # Lo script genera di default il file /root/debug.log
 # a secondo del tipo di installazione potrebbe essere necessario indirizzare l'output
