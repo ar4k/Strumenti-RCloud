@@ -89,7 +89,7 @@ cat >> $console << ROSSONET_WELCOME
 
 AR4K OpenShift Origin
 Il sistema installerà un sistema CentOS 6.x con OpenShift origin.
-per informazioni e supporto http://www.ar4k.eu
+per informazioni e supporto http://www.rossonet.org
 
 Installazione automatica creata da Rossonet s.c.a r.l.
 per maggiori informazioni scrivere a origami@rossonet.com
@@ -183,7 +183,7 @@ tar -xzf apache-tomcat-7.0.55.tar.gz
 mv apache-tomcat-7.0.55 /opt/
 ln -s /opt/apache-tomcat-7.0.55 /etc/alternatives/tomcat-7.0
 ln -s /opt/apache-tomcat-7.0.55 /usr/share/tomcat7
-wget  http://repo.ar4k.eu/raw/strumenti-go.git/master/jar/commons-logging-tomcat-juli.jar
+wget https://raw.githubusercontent.com/rossonet/Strumenti-RCloud/master/jar/commons-logging-tomcat-juli.jar
 cp commons-logging-tomcat-juli.jar /usr/share/tomcat7/bin/
 
 echo "installo Maven 3" >> $console
@@ -371,13 +371,13 @@ cat > demo.sh << DEMO
 #!/bin/bash
 # installa pacchetti basi trovati in internet
 echo "dura parecchi minuti..."
-rhc app create amq diy-0.1 --from-code=http://repo.ar4k.eu/r/openshift-activemq-example.git --no-git
-rhc app create bootgo jbossews-2.0 mysql-5.5 --from-code=http://repo.ar4k.eu/r/boot-go.git --no-git
-rhc app create wordpress php-5.4 mysql-5.5 --from-code=http://repo.ar4k.eu/r/openshift-wordpress-example.git --no-git
-rhc app create sugarcrm php-5.4 mysql-5.5 --from-code=http://repo.ar4k.eu/r/openshift-sugarcrm-example.git --no-git
-rhc app create owncloud php-5.4 mysql-5.5 cron-1.4 --from-code=http://repo.ar4k.eu/r/openshift-owncloud-example.git --no-git
-rhc app create grails jbossews-2.0 mysql-5.5 --from-code=http://repo.ar4k.eu/r/openshift-grails-example.git --no-git
-rhc app create git jbossews-1.0 --from-code=http://repo.ar4k.eu/r/openshift-gitblit-example.git --no-git
+rhc app create amq diy-0.1 --from-code=http://git.rossonet.net/gitblit-1.2.1/git/openshift-activemq-example.git --no-git
+rhc app create bootgo jbossews-2.0 mysql-5.5 --from-code=http://git.rossonet.net/gitblit-1.2.1/git/boot-go.git --no-git
+rhc app create wordpress php-5.4 mysql-5.5 --from-code=http://git.rossonet.net/gitblit-1.2.1/git/openshift-wordpress-example.git --no-git
+rhc app create sugarcrm php-5.4 mysql-5.5 --from-code=http://git.rossonet.net/gitblit-1.2.1/git/openshift-sugarcrm-example.git --no-git
+rhc app create owncloud php-5.4 mysql-5.5 cron-1.4 --from-code=http://git.rossonet.net/gitblit-1.2.1/git/openshift-owncloud-example.git --no-git
+rhc app create grails jbossews-2.0 mysql-5.5 --from-code=http://git.rossonet.net/gitblit-1.2.1/git/openshift-grails-example.git --no-git
+rhc app create git jbossews-1.0 --from-code=http://git.rossonet.net/gitblit-1.2.1/git/openshift-gitblit-example.git --no-git
 #rhc app create testfuse https://raw.github.com/jboss-fuse/fuse-openshift-cartridge/jboss-fuse-6.1.x-379/metadata/manifest.yml --no-git
 #rhc app create testfuse2 https://raw.github.com/jboss-fuse/fuse-openshift-cartridge/master/metadata/manifest.yml --no-git
 rhc app create testcakephp php-5.4 mysql-5.5 --from-code=git://github.com/openshift/cakephp-example.git --no-git
@@ -519,11 +519,11 @@ fi
 ################################################################
 ####### personalizzazioni
 
-echo "PRODUCT_LOGO=http://repo.ar4k.eu/raw/strumenti-go.git/master/immagini/ar4k_logo.png" >> /etc/openshift/console.conf
+echo "PRODUCT_LOGO=https://github.com/rossonet/Strumenti-RCloud/raw/master/immagini/logoRossonet.png" >> /etc/openshift/console.conf
 echo "PRODUCT_TITLE=AR4K OpenShift Origin" >> /etc/openshift/console.conf
 
 mv /etc/openshift/quickstarts.json ./quickstarts.json.bk
-wget -O /etc/openshift/quickstarts.json http://repo.ar4k.eu/raw/strumenti-go.git/master/openshift/quickstarts.json
+wget -O /etc/openshift/quickstarts.json https://raw.githubusercontent.com/rossonet/Strumenti-RCloud/master/openshift/quickstarts.json
 
 ################################################################
 ################################################################
