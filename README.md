@@ -1,7 +1,4 @@
 ## strumenti-go
------------------------------------------
------------------------------------------
------------------------------------------
 
 Script e template per gestire la piattaforma AR4K GO, CentOS, OpenShift
 
@@ -9,9 +6,7 @@ Progetto di laboratorio per implementare AR4K Go
 by Ambrosini (Rossonet s.c.a r.l.)
 primo laboratorio con Gianni Ghedini c/o Acantho S.p.A.
 
------------------------------------------
 -- Sezione Script creazione iso Fedora --
------------------------------------------
 
 requisiti: (da completare)
 
@@ -24,17 +19,13 @@ uso:
 L'immagine generata è un DVD Fedora live 21 con funzione di installazione.
 E' possibile creare una chiavetta USB avviabile con la funzione di salvataggio dei dati utilizzando questa spin Rossonet. (https://fedorahosted.org/liveusb-creator/)
 
------------------------------------------
 -------- Sezione Script Rossonet -------- 
------------------------------------------
 
 Nella cartella Rossonet sono presenti gli script bash per clonare il sistema sulle varie piattaforme virtuali
 (da fare RPM e Repository yum)
 
 
------------------------------------------
 ---------- Sezione OpenShift ------------
------------------------------------------
 
 l'account host deve poter creare i servizi su se stesso in FREEIPA
 
