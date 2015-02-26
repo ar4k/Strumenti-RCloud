@@ -106,7 +106,7 @@ rm -f /etc/localtime
 cp /usr/share/zoneinfo/Europe/Rome /etc/localtime
 
 echo "installo la JDK" >> $console
-wget http://marx.rossonet.net/ar4k/jdk-7u67-linux-x64.rpm
+wget http://hc.rossonet.name/jdk-7u67-linux-x64.rpm
 yum localinstall -y  jdk-7u67-linux-x64.rpm &>> $dir_installazione/yum.log
 
 # la configurazione completa ORACLE prevede le righe seguenti
@@ -136,7 +136,7 @@ quotacheck -f -cmug /
 echo "identifico la rete..." >> $console
 cur_ip_addr="$(/sbin/ip addr show | awk '/inet .*global/ { split($2,a,"/"); print a[1]; }' | head -1)"
 # utilizza un semplice script PHP per avere l'indirizzo pubblico chiamante
-pub_ip_addr="$(curl http://rossonet.rossonet.net/myip.php 2> /dev/null | grep 'Current IP Address: ' | sed 's/Current IP Address: //')"
+pub_ip_addr="$(curl http://www.rossonet.org/myip.php 2> /dev/null | grep 'Current IP Address: ' | sed 's/Current IP Address: //')"
 echo "ip privato:" >> $console
 echo $cur_ip_addr >> $console
 echo "ip pubblico:" >> $console
