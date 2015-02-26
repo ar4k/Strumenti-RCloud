@@ -187,13 +187,14 @@ wget https://raw.githubusercontent.com/rossonet/Strumenti-RCloud/master/jar/comm
 cp commons-logging-tomcat-juli.jar /usr/share/tomcat7/bin/
 
 echo "installo Maven 3" >> $console
-wget http://apache.fastbull.org/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
-tar -xzf apache-maven-3.2.2-bin.tar.gz
+#wget http://apache.fastbull.org/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz
+wget http://apache.fastbull.org/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz
+tar -xzf apache-maven-3.2.5-bin.tar.gz
 #rm -f apache-maven-3.2.2-bin.tar.gz
-mv apache-maven-3.2.2 /opt/
-ln -s /opt/apache-maven-3.2.2 /etc/alternatives/maven-3
-ln -s /opt/apache-maven-3.2.2 /etc/alternatives/maven
-ln -s /opt/apache-maven-3.2.2 /usr/share/java/apache-maven-3.0.3
+mv apache-maven-3.2.5 /opt/
+ln -s /opt/apache-maven-3.2.5 /etc/alternatives/maven-3
+ln -s /opt/apache-maven-3.2.5 /etc/alternatives/maven
+ln -s /opt/apache-maven-3.2.5 /usr/share/java/apache-maven-3.0.3
 echo -e 'export M2_HOME=/etc/alternatives/maven\nexport PATH=${M2_HOME}/bin:${PATH}'  > /etc/profile.d/maven.sh
 source /etc/profile.d/maven.sh
 
@@ -361,7 +362,7 @@ echo "inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" 
 echo >> $console
 echo "----------------" >> $console
 tail -F /tmp/openshift-deploy.log >> $console &
-tail -F ~/root/installazione_OpenShift.log &
+tail -F ~/installazione_OpenShift.log &
 # Ferma eventuali vnp per non avere due network in fase di installazione di openshift
 /etc/init.d/openvpn stop
 ./installazione_OpenShift.sh -w origin_deploy -c configurazione_OpenShift.yml --force > installazione_OpenShift.log
