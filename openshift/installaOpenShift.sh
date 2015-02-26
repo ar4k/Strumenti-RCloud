@@ -177,12 +177,12 @@ chmod +x oo-diagnostics
 # Software utili allo sviluppo Rossonet/AR4K
 
 echo "installo Tomcat 7" >> $console
-wget http://mirror.nohup.it/apache/tomcat/tomcat-7/v7.0.55/bin/apache-tomcat-7.0.55.tar.gz
-tar -xzf apache-tomcat-7.0.55.tar.gz
+wget http://mirror.nohup.it/apache/tomcat/tomcat-7/v7.0.59/bin/apache-tomcat-7.0.59.tar.gz
+tar -xzf apache-tomcat-7.0.59.tar.gz
 #rm -f apache-tomcat-8.0.9.tar.gz
-mv apache-tomcat-7.0.55 /opt/
-ln -s /opt/apache-tomcat-7.0.55 /etc/alternatives/tomcat-7.0
-ln -s /opt/apache-tomcat-7.0.55 /usr/share/tomcat7
+mv apache-tomcat-7.0.59 /opt/
+ln -s /opt/apache-tomcat-7.0.59 /etc/alternatives/tomcat-7.0
+ln -s /opt/apache-tomcat-7.0.59 /usr/share/tomcat7
 wget https://raw.githubusercontent.com/rossonet/Strumenti-RCloud/master/jar/commons-logging-tomcat-juli.jar
 cp commons-logging-tomcat-juli.jar /usr/share/tomcat7/bin/
 
@@ -361,8 +361,12 @@ echo "inizio installazione OpenShift (dipende dal sistema, dura circa un'ora.)" 
 echo >> $console
 echo "----------------" >> $console
 tail -F /tmp/openshift-deploy.log >> $console &
+tail -F ~/root/installazione_OpenShift.log &
+# Ferma eventuali vnp per non avere due network in fase di installazione di openshift
+/etc/init.d/openvpn stop
 ./installazione_OpenShift.sh -w origin_deploy -c configurazione_OpenShift.yml --force > installazione_OpenShift.log
 echo "fine del processo di installazione" >> $console
+/etc/init.d/openvpn start
 cd $dir_installazione
 
 # da modificare...
